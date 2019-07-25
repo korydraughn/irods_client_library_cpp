@@ -143,7 +143,6 @@ target_include_directories(${IRODS_LIBRARY_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/inc
                                                          ${CMAKE_SOURCE_DIR}/include
                                                          ${CMAKE_SOURCE_DIR}/src/api/include
                                                          ${CMAKE_SOURCE_DIR}/src/core/include
-                                                         #${CMAKE_SOURCE_DIR}/src/server/core/include
                                                          ${CMAKE_SOURCE_DIR}/src/hasher/include
                                                          ${OPENSSL_INCLUDE_DIR}
                                                          /opt/irods-externals/boost1.67.0-0/include
