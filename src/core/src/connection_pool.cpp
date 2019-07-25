@@ -1,6 +1,6 @@
 #include "connection_pool.hpp"
 
-#include "irods_query.hpp"
+#include "query.hpp"
 #include "thread_pool.hpp"
 
 #include <stdexcept>

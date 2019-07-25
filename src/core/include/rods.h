@@ -10,7 +10,7 @@
 #define RODS_H__
 
 #include "rodsDef.h"
-#include "rodsVersion.h"
+//#include "rodsVersion.h"
 #include "rodsError.h"
 #include "rodsErrorTable.h"
 #include "rodsLog.h"

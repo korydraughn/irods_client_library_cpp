@@ -48,7 +48,7 @@
 #include "irods_log.hpp"
 #include "irods_error.hpp"
 #include "irods_exception.hpp"
-#include "irods_query.hpp"
+#include "query.hpp"
 #include "irods_at_scope_exit.hpp"
 
 #include <iostream>
