@@ -1,5 +1,5 @@
 // =-=-=-=-=-=-=-
-#include <cstdlib>
+
 #include "irods_client_server_negotiation.hpp"
 #include "irods_stacktrace.hpp"
 #include "irods_exception.hpp"
@@ -14,15 +14,17 @@
 
 // =-=-=-=-=-=-=-
 // irods includes
-#include "rsGlobalExtern.hpp"
+//#include "rsGlobalExtern.hpp"
 #include "rodsDef.h"
-#include "rodsConnect.h"
+//#include "rodsConnect.h"
 #include "rcMisc.h"
+#include "packStruct.h"
 //#include "index.hpp"
 //#include "reFuncDefs.hpp"
 
 // =-=-=-=-=-=-=-
 // stl includes
+#include <cstdlib>
 #include <map>
 #include <vector>
 
@@ -346,7 +348,8 @@ namespace irods {
                 try {
                     sid.reset(irods::get_server_property<const std::string>(irods::CFG_ZONE_KEY_KW));
                 } catch ( const irods::exception e ) {
-                    sid.reset(irods::get_server_property<const std::string>(LOCAL_ZONE_SID_KW));
+                    // FIXME This whole branch beginning with "if ( !client_side )" should be removed.
+                    //sid.reset(irods::get_server_property<const std::string>(LOCAL_ZONE_SID_KW));
                 }
                 try {
                     const std::string& neg_key = determine_negotiation_key(_host_name);

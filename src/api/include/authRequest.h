@@ -6,7 +6,7 @@
 #include "procApiRequest.h"
 #include "apiNumber.h"
 #include "authenticate.h"
-#include "icatDefines.h"
+//#include "icatDefines.h"
 
 typedef struct {
     char *challenge;

@@ -9,7 +9,7 @@
 #include "rods.h"
 #include "packStruct.h"
 #include "rodsPackInstruct.h"
-#include "reDefines.h"
+//#include "reDefines.h" // FIXME This file should be moved into common.
 #include "authenticate.h"
 #include "rcGlobalExtern.h"
 
@@ -41,7 +41,7 @@ packConstant_t PackConstantTable[] = {
     {"DIR_LEN", DIR_LEN},
     {"ERR_MSG_LEN", ERR_MSG_LEN},
     {"MAX_SQL_ATTR", MAX_SQL_ATTR},
-    {"RULE_SET_DEF_LENGTH", RULE_SET_DEF_LENGTH},
+    {"RULE_SET_DEF_LENGTH", 10 * MAX_NAME_LEN}, // {"RULE_SET_DEF_LENGTH", RULE_SET_DEF_LENGTH},
     {"META_STR_LEN", META_STR_LEN},
     {"CHALLENGE_LEN", CHALLENGE_LEN},
     {"RESPONSE_LEN", RESPONSE_LEN},

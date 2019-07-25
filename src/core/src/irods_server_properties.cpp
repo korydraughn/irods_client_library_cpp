@@ -9,7 +9,7 @@
 #include "irods_get_full_path_for_config_file.hpp"
 
 #include "rods.h"
-#include "rodsConnect.h"
+//#include "rodsConnect.h"
 #include "irods_log.hpp"
 #include "irods_exception.hpp"
 #include "irods_lookup_table.hpp"

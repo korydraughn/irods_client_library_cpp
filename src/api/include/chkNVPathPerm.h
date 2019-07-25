@@ -2,7 +2,7 @@
 #define CHK_NV_PATH_PERM_H__
 
 #include "fileOpen.h"
-#include "rodsConnect.h"
+//#include "rodsConnect.h"
 #include "rcConnect.h"
 
 #ifdef __cplusplus

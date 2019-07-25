@@ -5,10 +5,10 @@
 #include "irods_plugin_name_generator.hpp"
 #include "irods_pack_table.hpp"
 #include "irods_client_api_table.hpp"
+
 #include <boost/filesystem.hpp>
+
 namespace irods {
-
-
 
 // =-=-=-=-=-=-=-
 // public - ctor

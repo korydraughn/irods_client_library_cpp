@@ -1,7 +1,7 @@
 #ifndef EXEC_CMD_H__
 #define EXEC_CMD_H__
 
-#include "rodsConnect.h"
+//#include "rodsConnect.h"
 #include "procApiRequest.h"
 #include "dataObjInpOut.h"
 

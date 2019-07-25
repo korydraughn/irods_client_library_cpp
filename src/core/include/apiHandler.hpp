@@ -14,21 +14,21 @@
 #include "packStruct.h"
 #include "irods_lookup_table.hpp"
 #include "irods_plugin_base.hpp"
-#include "irods_re_ruleexistshelper.hpp"
+//#include "irods_re_ruleexistshelper.hpp"
 #include "irods_stacktrace.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/any.hpp"
 #include "irods_pack_table.hpp"
 
-#include "irods_re_namespaceshelper.hpp"
-#include "irods_re_plugin.hpp"
-#include "irods_re_ruleexistshelper.hpp"
+//#include "irods_re_namespaceshelper.hpp"
+//#include "irods_re_plugin.hpp"
+//#include "irods_re_ruleexistshelper.hpp"
 
 #ifdef IRODS_ENABLE_SYSLOG
-#include "irods_logger.hpp"
-#include "rcMisc.h"
-#include <type_traits>
-#include <typeinfo>
+    #include "irods_logger.hpp"
+    #include "rcMisc.h"
+    #include <type_traits>
+    #include <typeinfo>
 #endif // IRODS_ENABLE_SYSLOG
 
 #include <functional>
@@ -323,6 +323,7 @@ namespace irods {
                 std::function<void( void* )> clearInStruct;		//free input struct function
 
         private:
+#if 0
             template<typename... types_t>
             error invoke_policy_enforcement_point(
                 rule_engine_context_manager<
@@ -365,6 +366,7 @@ namespace irods {
                 return saved_op_err;
 
             } // invoke_policy_enforcement_point
+#endif
     }; // class api_entry
 
     typedef boost::shared_ptr< api_entry > api_entry_ptr;

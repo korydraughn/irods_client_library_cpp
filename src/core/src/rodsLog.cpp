@@ -26,7 +26,7 @@ const static std::map<const int, const std::string> irods_error_map = irods_erro
 #include <unordered_map>
 #include <sys/time.h>
 #include "irods_exception.hpp"
-#include "irods_logger.hpp"
+//#include "irods_logger.hpp"
 
 #ifndef windows_platform
 #include <unistd.h>
@@ -81,6 +81,7 @@ std::string create_log_error_prefix() {
 
 void forward_to_syslog(int _log_level, const std::string& _msg)
 {
+    /*
     if (CLIENT_PT == ::ProcessType) {
         return;
     }
@@ -117,6 +118,7 @@ void forward_to_syslog(int _log_level, const std::string& _msg)
     else {
         info(_msg);
     }
+    */
 }
 
 /*

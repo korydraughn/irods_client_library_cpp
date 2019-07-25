@@ -6,12 +6,12 @@
 #include "sockComm.h"
 #include "rcMisc.h"
 #include "rcGlobalExtern.h"
-#include "miscServerFunct.hpp"
+//#include "miscServerFunct.hpp"
 #include "getHostForPut.h"
 #include "getHostForGet.h"
 //#include "QUANTAnet_rbudpBase_c.h"
 #include "rcConnect.h"
-#include "rodsConnect.h"
+//#include "rodsConnect.h"
 
 #ifdef windows_platform
 #include "irodsntutil.hpp"
