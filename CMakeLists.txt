@@ -264,7 +264,7 @@ set_target_properties(${IRODS_LIBRARY_NAME} PROPERTIES CXX_STANDARD 17
                                                        VERSION ${IRODS_LIBRARY_VERSION}
                                                        SOVERSION ${IRODS_LIBRARY_VERSION})
 
-target_compile_options(${IRODS_LIBRARY_NAME} -fPIC)
+target_compile_options(${IRODS_LIBRARY_NAME} PRIVATE -fPIC)
 
 target_include_directories(${IRODS_LIBRARY_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include/filesystem/include
                                                          ${CMAKE_SOURCE_DIR}/src/api/include
