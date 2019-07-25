@@ -8,6 +8,7 @@
 #include "rodsConnect.h"
 #include "rsGlobalExtern.hpp"
 #include "rcGlobalExtern.h"
+#include "miscServerFunct.hpp"
 #include "getRemoteZoneResc.h"
 #include "irods_resource_backport.hpp"
 #include "rsLog.hpp"
@@ -19,6 +20,76 @@
 #include <experimental/iterator>
 #include <sstream>
 
+/* getAndConnRcatHost - get the rcat enabled host (result given in
+ * rodsServerHost) based on the rcatZoneHint.
+ * rcatZoneHint is the hint for which zone to go it. It can be :
+ *      a full path - e.g., /A/B/C. In this case, "A" will be taken as the zone
+ *      a zone name - a string wth the first character that is no '/' is taken
+ *         as a zone name.
+ *      NULL string - default to local zone
+ * If the rcat host is remote, it will automatically connect to the rcat host.
+ */
+
+int getAndConnRcatHost(
+    rsComm_t *rsComm,
+    int rcatType,
+    const char *rcatZoneHint,
+    rodsServerHost_t **rodsServerHost ) {
+
+    int status = getRcatHost( rcatType, rcatZoneHint, rodsServerHost );
+
+    if ( status < 0 ) {
+        rodsLog( LOG_NOTICE,
+                 "getAndConnRcatHost:getRcatHost() failed. erro=%d", status );
+        return status;
+    }
+
+    if ( ( *rodsServerHost )->localFlag == LOCAL_HOST ) {
+        return LOCAL_HOST;
+    }
+    status = svrToSvrConnect( rsComm, *rodsServerHost );
+
+    if ( status < 0 ) {
+        rodsLog( LOG_NOTICE,
+                 "getAndConnRcatHost: svrToSvrConnect to %s failed",
+                 ( *rodsServerHost )->hostName->name );
+        if ( ( *rodsServerHost )->rcatEnabled == REMOTE_ICAT ) {
+            status = convZoneSockError( status );
+        }
+    }
+    if ( status >= 0 ) {
+        return REMOTE_HOST;
+    }
+    else {
+        return status;
+    }
+}
+
+int
+getAndConnRcatHostNoLogin( rsComm_t *rsComm, int rcatType, char *rcatZoneHint,
+                           rodsServerHost_t **rodsServerHost ) {
+    int status = getRcatHost( rcatType, rcatZoneHint, rodsServerHost );
+
+    if ( status < 0 ) {
+        return status;
+    }
+
+    if ( ( *rodsServerHost )->localFlag == LOCAL_HOST ) {
+        return LOCAL_HOST;
+    }
+
+    status = svrToSvrConnectNoLogin( rsComm, *rodsServerHost );
+
+    if ( status < 0 ) {
+        rodsLog( LOG_NOTICE,
+                 "getAndConnRcatHost: svrToSvrConnectNoLogin to %s failed",
+                 ( *rodsServerHost )->hostName->name );
+        if ( ( *rodsServerHost )->rcatEnabled == REMOTE_ICAT ) {
+            status = convZoneSockError( status );
+        }
+    }
+    return status;
+}
 
 int
 getRcatHost( int rcatType, const char *rcatZoneHint,
@@ -376,6 +447,44 @@ resolveHost( rodsHostAddr_t *addr, rodsServerHost_t **rodsServerHost ) {
 }
 
 int
+resoAndConnHostByDataObjInfo( rsComm_t *rsComm, dataObjInfo_t *dataObjInfo,
+                              rodsServerHost_t **rodsServerHost ) {
+    int status;
+    rodsHostAddr_t addr;
+    int remoteFlag;
+    if ( dataObjInfo == NULL ) {
+        rodsLog( LOG_NOTICE,
+                 "resoAndConnHostByDataObjInfo: NULL dataObjInfo" );
+        return SYS_INTERNAL_NULL_INPUT_ERR;
+    }
+
+    // =-=-=-=-=-=-=-
+    // extract the host location from the resource hierarchy
+    std::string location;
+    irods::error ret = irods::get_loc_for_hier_string( dataObjInfo->rescHier, location );
+    if ( !ret.ok() ) {
+        irods::log( PASSMSG( "resoAndConnHostByDataObjInfo - failed in get_loc_for_hier_string", ret ) );
+        return ret.code();
+    }
+
+
+    memset( &addr, 0, sizeof( addr ) );
+    rstrcpy( addr.hostAddr, location.c_str(), NAME_LEN );
+
+    remoteFlag = resolveHost( &addr, rodsServerHost );
+
+    if ( remoteFlag == REMOTE_HOST ) {
+        status = svrToSvrConnect( rsComm, *rodsServerHost );
+        if ( status < 0 ) {
+            rodsLog( LOG_ERROR,
+                     "resAndConnHostByDataObjInfo: svrToSvrConnect to %s failed",
+                     ( *rodsServerHost )->hostName->name );
+        }
+    }
+    return remoteFlag;
+}
+
+int
 printServerHost( rodsServerHost_t *myServerHost ) {
     using log = irods::experimental::log;
 
@@ -712,6 +821,95 @@ disconnectAllSvrToSvrConn() {
     return 0;
 }
 
+/* getAndConnRemoteZone - get the remote zone host (result given in
+ * rodsServerHost) based on the dataObjInp->objPath as zoneHint.
+ * If the host is a remote zone, automatically connect to the host.
+ */
+
+int
+getAndConnRemoteZone( rsComm_t *rsComm, dataObjInp_t *dataObjInp,
+                      rodsServerHost_t **rodsServerHost, char *remoteZoneOpr ) {
+    int status;
+
+    status = getRemoteZoneHost( rsComm, dataObjInp, rodsServerHost,
+                                remoteZoneOpr );
+
+    if ( status == LOCAL_HOST ) {
+        return LOCAL_HOST;
+    }
+    else if ( status < 0 ) {
+        return status;
+    }
+
+    status = svrToSvrConnect( rsComm, *rodsServerHost );
+
+    if ( status < 0 ) {
+        rodsLog( LOG_ERROR,
+                 "getAndConnRemoteZone: svrToSvrConnect to %s failed",
+                 ( *rodsServerHost )->hostName->name );
+    }
+    if ( status >= 0 ) {
+        return REMOTE_HOST;
+    }
+    else {
+        return status;
+    }
+}
+
+int
+getAndConnRemoteZoneForCopy( rsComm_t *rsComm, dataObjCopyInp_t *dataObjCopyInp,
+                             rodsServerHost_t **rodsServerHost ) {
+    int status;
+    dataObjInp_t *srcDataObjInp, *destDataObjInp;
+    rodsServerHost_t *srcIcatServerHost = NULL;
+    rodsServerHost_t *destIcatServerHost = NULL;
+
+    srcDataObjInp = &dataObjCopyInp->srcDataObjInp;
+    destDataObjInp = &dataObjCopyInp->destDataObjInp;
+
+    status = getRcatHost( MASTER_RCAT, srcDataObjInp->objPath,
+                          &srcIcatServerHost );
+
+    if ( status < 0 || NULL == srcIcatServerHost ) { // JMC cppcheck - nullptr
+        rodsLog( LOG_ERROR,
+                 "getAndConnRemoteZoneForCopy: getRcatHost error for %s",
+                 srcDataObjInp->objPath );
+        return status;
+    }
+
+    if ( srcIcatServerHost->rcatEnabled != REMOTE_ICAT ) {
+        /* local zone. nothing to do */
+        return LOCAL_HOST;
+    }
+
+    status = getRcatHost( MASTER_RCAT, destDataObjInp->objPath,
+                          &destIcatServerHost );
+
+    if ( status < 0 || NULL == destIcatServerHost ) { // JMC cppcheck - nullptr
+        rodsLog( LOG_ERROR,
+                 "getAndConnRemoteZoneForCopy: getRcatHost error for %s",
+                 destDataObjInp->objPath );
+        return status;
+    }
+
+    if ( destIcatServerHost->rcatEnabled != REMOTE_ICAT ) {
+        /* local zone. nothing to do */
+        return LOCAL_HOST;
+    }
+
+    /* remote zone to different remote zone copy. Have to handle it
+     * locally because of proxy admin user privilege issue */
+    if ( srcIcatServerHost != destIcatServerHost ) {
+        return LOCAL_HOST;
+    }
+
+    /* from the same remote zone. do it in the remote zone */
+
+    status = getAndConnRemoteZone( rsComm, destDataObjInp, rodsServerHost,
+                                   REMOTE_CREATE );
+
+    return status;
+}
 
 int
 isLocalZone( char *zoneHint ) {
@@ -755,6 +953,51 @@ isSameZone( char *zoneHint1, char *zoneHint2 ) {
 }
 
 int
+getRemoteZoneHost( rsComm_t *rsComm, dataObjInp_t *dataObjInp,
+                   rodsServerHost_t **rodsServerHost, char *remoteZoneOpr ) {
+    int status;
+    rodsServerHost_t *icatServerHost = NULL;
+    rodsHostAddr_t *rescAddr = NULL;
+
+    status = getRcatHost( MASTER_RCAT, dataObjInp->objPath, &icatServerHost );
+
+    if ( status < 0 || NULL == icatServerHost ) { // JMC cppcheck - nullptr
+        return status;
+    }
+
+    if ( icatServerHost->rcatEnabled != REMOTE_ICAT ) {
+        /* local zone. nothing to do */
+        return LOCAL_HOST;
+    }
+
+    status = svrToSvrConnect( rsComm, icatServerHost );
+
+    if ( status < 0 ) {
+        rodsLog( LOG_ERROR,
+                 "getRemoteZoneHost: svrToSvrConnect to %s failed, status = %d",
+                 icatServerHost->hostName->name, status );
+        status = convZoneSockError( status );
+        return status;
+    }
+
+    addKeyVal( &dataObjInp->condInput, REMOTE_ZONE_OPR_KW, remoteZoneOpr );
+
+    status = rcGetRemoteZoneResc( icatServerHost->conn, dataObjInp, &rescAddr );
+    if ( status < 0 ) {
+        rodsLog( LOG_ERROR,
+                 "getRemoteZoneHost: rcGetRemoteZoneResc for %s failed, status = %d",
+                 dataObjInp->objPath, status );
+        return status;
+    }
+
+    status = resolveHost( rescAddr, rodsServerHost );
+
+    free( rescAddr );
+
+    return status;
+}
+
+int
 isLocalHost( const char *hostAddr ) {
     int remoteFlag;
     rodsServerHost_t *rodsServerHost;
@@ -790,3 +1033,39 @@ getReHost( rodsServerHost_t **rodsServerHost ) {
     return status;
 }
 
+/* getAndConnReHost - Get the irodsReServer host (result given in
+ * rodsServerHost).
+ * If the is remote, it will automatically connect to the server where
+ * irodsReServer is run.
+ */
+
+int
+getAndConnReHost( rsComm_t *rsComm, rodsServerHost_t **rodsServerHost ) {
+    int status;
+
+    status = getReHost( rodsServerHost );
+
+    if ( status < 0 ) {
+        rodsLog( LOG_NOTICE,
+                 "getAndConnReHost:getReHost() failed. erro=%d", status );
+        return status;
+    }
+
+    if ( ( *rodsServerHost )->localFlag == LOCAL_HOST ) {
+        return LOCAL_HOST;
+    }
+
+    status = svrToSvrConnect( rsComm, *rodsServerHost );
+
+    if ( status < 0 ) {
+        rodsLog( LOG_NOTICE,
+                 "getAndConnReHost: svrToSvrConnect to %s failed",
+                 ( *rodsServerHost )->hostName->name );
+    }
+    if ( status >= 0 ) {
+        return REMOTE_HOST;
+    }
+    else {
+        return status;
+    }
+}

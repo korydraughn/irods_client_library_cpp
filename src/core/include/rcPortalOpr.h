@@ -12,9 +12,9 @@
 #include "rods.h"
 #include "objInfo.h"
 #include "dataObjInpOut.h"
-#include "QUANTAnet_rbudpBase_c.h"
-#include "QUANTAnet_rbudpSender_c.h"
-#include "QUANTAnet_rbudpReceiver_c.h"
+//#include "QUANTAnet_rbudpBase_c.h"
+//#include "QUANTAnet_rbudpSender_c.h"
+//#include "QUANTAnet_rbudpReceiver_c.h"
 
 #define MAX_PROGRESS_CNT	8
 
@@ -28,10 +28,12 @@ typedef struct RcPortalTransferInp {
     unsigned char shared_secret[ NAME_LEN ];
 } rcPortalTransferInp_t;
 
+#if 0
 typedef enum {
     RBUDP_CLIENT,
     RBUDP_SERVER
 } rbudpProcType_t;
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,6 +69,7 @@ getIncludeFile( rcComm_t *conn, bytesBuf_t *dataObjOutBBuf, char *locFilePath );
 int
 getFile( rcComm_t *conn, int l1descInx, char *locFilePath, char *objPath,
          rodsLong_t dataSize );
+#if 0
 int
 putFileToPortalRbudp( portalOprOut_t *portalOprOut,
                       char *locFilePath, int locFd,
@@ -77,6 +80,8 @@ getFileToPortalRbudp( portalOprOut_t *portalOprOut,
                       int veryVerbose, int packetSize );
 int
 initRbudpClient( rbudpBase_t *rbudpBase, portList_t *myPortList );
+#endif
+
 int
 initFileRestart( rcComm_t *conn, char *fileName, char *objPath,
                  rodsLong_t fileSize, int numThr );

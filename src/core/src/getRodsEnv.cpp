@@ -29,7 +29,7 @@
 #include "getRodsEnv.h"
 #include "rodsLog.h"
 #include "irods_log.hpp"
-#include "irods_version.h"
+//#include "irods_version.h"
 #include "irods_environment_properties.hpp"
 #include "irods_configuration_keywords.hpp"
 
