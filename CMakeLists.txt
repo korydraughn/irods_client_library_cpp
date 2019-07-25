@@ -14,7 +14,7 @@ set(IRODS_FILESYSTEM_SOURCE_FILES
     ${CMAKE_SOURCE_DIR}/src/filesystem/path.cpp
     ${CMAKE_SOURCE_DIR}/src/filesystem/filesystem.cpp
     ${CMAKE_SOURCE_DIR}/src/filesystem/collection_iterator.cpp
-    ${CMAKE_SOURCE_DIR}/src/filesystem/rescursive_collection_iterator.cpp)
+    ${CMAKE_SOURCE_DIR}/src/filesystem/recursive_collection_iterator.cpp)
 
 set(IRODS_API_SOURCE_FILES
     ${CMAKE_SOURCE_DIR}/src/api/src/rcAuthCheck.cpp
