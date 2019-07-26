@@ -123,38 +123,48 @@ set(IRODS_HASHER_SOURCE_FILES
     ${CMAKE_SOURCE_DIR}/src/hasher/src/MD5Strategy.cpp
     ${CMAKE_SOURCE_DIR}/src/hasher/src/SHA256Strategy.cpp)
 
-add_library(${IRODS_LIBRARY_NAME} SHARED ${IRODS_FILESYSTEM_SOURCE_FILES}
-                                         ${IRODS_API_SOURCE_FILES}
-                                         ${IRODS_CORE_SOURCE_FILES}
-                                         ${IRODS_HASHER_SOURCE_FILES})
+add_library(${IRODS_LIBRARY_NAME}
+            SHARED
+            ${IRODS_FILESYSTEM_SOURCE_FILES}
+            ${IRODS_API_SOURCE_FILES}
+            ${IRODS_CORE_SOURCE_FILES}
+            ${IRODS_HASHER_SOURCE_FILES})
 
-set_target_properties(${IRODS_LIBRARY_NAME} PROPERTIES VERSION ${IRODS_LIBRARY_VERSION}
-                                                       SOVERSION ${IRODS_LIBRARY_VERSION_MAJOR})
+set_target_properties(${IRODS_LIBRARY_NAME}
+                      PROPERTIES
+                      VERSION ${IRODS_LIBRARY_VERSION}
+                      SOVERSION ${IRODS_LIBRARY_VERSION_MAJOR})
 
-target_compile_definitions(${IRODS_LIBRARY_NAME} PRIVATE RODS_REL_VERSION="rods4.3.0"
-                                                         RODS_API_VERSION="d"
-                                                         IRODS_VERSION_MAJOR=4
-                                                         IRODS_VERSION_MINOR=3
-                                                         IRODS_VERSION_PATCHLEVEL=0)
+target_compile_definitions(${IRODS_LIBRARY_NAME}
+                           PRIVATE
+                           RODS_REL_VERSION="rods4.3.0"
+                           RODS_API_VERSION="d"
+                           IRODS_VERSION_MAJOR=4
+                           IRODS_VERSION_MINOR=3
+                           IRODS_VERSION_PATCHLEVEL=0)
 
 target_compile_options(${IRODS_LIBRARY_NAME} PRIVATE -fPIC -Wall -nostdlib -stdlib=libc++ -pthread)
 
-target_include_directories(${IRODS_LIBRARY_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include/filesystem/include
-                                                         ${CMAKE_SOURCE_DIR}/include
-                                                         ${CMAKE_SOURCE_DIR}/src/api/include
-                                                         ${CMAKE_SOURCE_DIR}/src/core/include
-                                                         ${CMAKE_SOURCE_DIR}/src/hasher/include
-                                                         ${OPENSSL_INCLUDE_DIR}
-                                                         /opt/irods-externals/boost1.67.0-0/include
-                                                         /opt/irods-externals/json3.1.2-0/include
-                                                         /opt/irods-externals/spdlog0.17.0-0/include)
+target_include_directories(${IRODS_LIBRARY_NAME}
+                           PRIVATE
+                           ${CMAKE_SOURCE_DIR}/include/filesystem/include
+                           ${CMAKE_SOURCE_DIR}/include
+                           ${CMAKE_SOURCE_DIR}/src/api/include
+                           ${CMAKE_SOURCE_DIR}/src/core/include
+                           ${CMAKE_SOURCE_DIR}/src/hasher/include
+                           ${OPENSSL_INCLUDE_DIR}
+                           /opt/irods-externals/boost1.67.0-0/include
+                           /opt/irods-externals/json3.1.2-0/include
+                           /opt/irods-externals/spdlog0.17.0-0/include)
 
-target_link_libraries(${IRODS_LIBRARY_NAME} PRIVATE /opt/irods-externals/boost1.67.0-0/lib/libboost_filesystem.so
-                                                    /opt/irods-externals/boost1.67.0-0/lib/libboost_system.so
-                                                    /opt/irods-externals/boost1.67.0-0/lib/libboost_thread.so
-                                                    /opt/irods-externals/boost1.67.0-0/lib/libboost_chrono.so
-                                                    /opt/irods-externals/boost1.67.0-0/lib/libboost_regex.so
-                                                    ${OPENSSL_SSL_LIBRARY}
-                                                    ${OPENSSL_CRYTO_LIBRARY}
-                                                    ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${IRODS_LIBRARY_NAME}
+                      PRIVATE
+                      /opt/irods-externals/boost1.67.0-0/lib/libboost_filesystem.so
+                      /opt/irods-externals/boost1.67.0-0/lib/libboost_system.so
+                      /opt/irods-externals/boost1.67.0-0/lib/libboost_thread.so
+                      /opt/irods-externals/boost1.67.0-0/lib/libboost_chrono.so
+                      /opt/irods-externals/boost1.67.0-0/lib/libboost_regex.so
+                      ${OPENSSL_SSL_LIBRARY}
+                      ${OPENSSL_CRYTO_LIBRARY}
+                      ${CMAKE_THREAD_LIBS_INIT})
 
