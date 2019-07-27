@@ -51,11 +51,6 @@ extern "C" {
     static char authFileName  [ LONG_NAME_LEN ] = "";
     static char configFileName[ LONG_NAME_LEN ] = "";
 
-    char *
-    getRodsEnvFileName() {
-        return configFileName;
-    }
-
     /* Return the auth filename, if any */
     /* Used by obf routines so that the env struct doesn't have to be passed
        up and down the calling chain */
@@ -569,68 +564,6 @@ extern "C" {
 
         return 0;
     }
-
-    int printRodsEnv(
-        FILE*    _fout ) {
-        if( !_fout ) {
-            fprintf(
-                stderr,
-                "printRodsEnv :: null input param(s)\n" );
-            return SYS_INTERNAL_NULL_INPUT_ERR;
-        }
-
-        try {
-            const auto& prop_map = irods::environment_properties::instance().map();
-
-            fprintf(
-                    _fout,
-                    "irods_version - %d.%d.%d\n",
-                    IRODS_VERSION_MAJOR,
-                    IRODS_VERSION_MINOR,
-                    IRODS_VERSION_PATCHLEVEL);
-
-            for( auto itr = prop_map.cbegin(); itr != prop_map.cend(); ++itr ) {
-
-                try {
-                    int val = boost::any_cast< int >( itr->second );
-                    fprintf(
-                            _fout,
-                            "%s - %d\n",
-                            itr->first.c_str(),
-                            val );
-                    continue;
-                }
-                catch ( const boost::bad_any_cast& ) {
-                }
-
-                try {
-                    const std::string& val = boost::any_cast< const std::string& >( itr->second );
-                    fprintf(
-                            _fout,
-                            "%s - %s\n",
-                            itr->first.c_str(),
-                            val.c_str() );
-                    continue;
-                }
-                catch ( const boost::bad_any_cast& ) {
-                    fprintf(
-                            stderr,
-                            "failed to cast %s",
-                            itr->first.c_str() );
-                }
-
-            } // for itr
-        } catch ( const irods::exception& e ) {
-            fprintf( stderr,
-                "%s",
-                e.what() );
-            return e.code();
-        }
-
-        return 0;
-
-    } // printRodsEnv
-
 
     /* build a couple default values from others if appropriate */
     int
