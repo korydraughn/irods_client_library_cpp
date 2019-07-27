@@ -27,69 +27,8 @@ static SSL_CTX *sslInit( char *certfile, char *keyfile );
 static SSL *sslInitSocket( SSL_CTX *ctx, int sock );
 static void sslLogError( char *msg );
 static DH *get_dh2048();
-static int sslLoadDHParams( SSL_CTX *ctx, char *file );
 static int sslVerifyCallback( int ok, X509_STORE_CTX *store );
 static int sslPostConnectionCheck( SSL *ssl, char *peer );
-
-int
-sslStart( rcComm_t *rcComm ) {
-    int status;
-    sslStartInp_t sslStartInp;
-
-    if ( rcComm == NULL ) {
-        return USER__NULL_INPUT_ERR;
-    }
-
-    if ( rcComm->ssl_on ) {
-        /* SSL connection turned on ... return */
-        return 0;
-    }
-
-    /* ask the server if we can start SSL */
-    memset( &sslStartInp, 0, sizeof( sslStartInp ) );
-    status = rcSslStart( rcComm, &sslStartInp );
-    if ( status < 0 ) {
-        rodsLogError( LOG_ERROR, status, "sslStart: server refused our request to start SSL" );
-        return status;
-    }
-
-    /* we have the go-ahead ... set up SSL on our side of the socket */
-    rcComm->ssl_ctx = sslInit( NULL, NULL );
-    if ( rcComm->ssl_ctx == NULL ) {
-        rodsLog( LOG_ERROR, "sslStart: couldn't initialize SSL context" );
-        return SSL_INIT_ERROR;
-    }
-
-    rcComm->ssl = sslInitSocket( rcComm->ssl_ctx, rcComm->sock );
-    if ( rcComm->ssl == NULL ) {
-        rodsLog( LOG_ERROR, "sslStart: couldn't initialize SSL socket" );
-        SSL_CTX_free( rcComm->ssl_ctx );
-        rcComm->ssl_ctx = NULL;
-        return SSL_INIT_ERROR;
-    }
-
-    status = SSL_connect( rcComm->ssl );
-    if ( status < 1 ) {
-        sslLogError( "sslStart: error in SSL_connect" );
-        SSL_free( rcComm->ssl );
-        rcComm->ssl = NULL;
-        SSL_CTX_free( rcComm->ssl_ctx );
-        rcComm->ssl_ctx = NULL;
-        return SSL_HANDSHAKE_ERROR;
-    }
-
-    rcComm->ssl_on = 1;
-
-    if ( !sslPostConnectionCheck( rcComm->ssl, rcComm->host ) ) {
-        rodsLog( LOG_ERROR, "sslStart: post connection certificate check failed" );
-        sslEnd( rcComm );
-        return SSL_CERT_ERROR;
-    }
-
-    snprintf( rcComm->negotiation_results, sizeof( rcComm->negotiation_results ),
-              "%s", irods::CS_NEG_USE_SSL.c_str() );
-    return 0;
-}
 
 int
 sslEnd( rcComm_t *rcComm ) {
@@ -136,119 +75,6 @@ sslEnd( rcComm_t *rcComm ) {
 
 
     return 0;
-}
-
-int
-sslWriteMsgHeader( msgHeader_t *myHeader, SSL *ssl ) {
-    int nbytes;
-    int status;
-    int myLen;
-    bytesBuf_t *headerBBuf = NULL;
-
-    /* always use XML_PROT for the Header */
-    status = packStruct( ( void * ) myHeader, &headerBBuf,
-                         "MsgHeader_PI", RodsPackTable, 0, XML_PROT );
-
-    if ( status < 0 ) {
-        rodsLogError( LOG_ERROR, status,
-                      "sslWriteMsgHeader: packStruct error, status = %d", status );
-        return status;
-    }
-
-    if ( getRodsLogLevel() >= LOG_DEBUG8 ) {
-        printf( "sending header: len = %d\n%s\n", headerBBuf->len,
-                ( char * ) headerBBuf->buf );
-    }
-
-    myLen = htonl( headerBBuf->len );
-
-    nbytes = sslWrite( ( void * ) &myLen, sizeof( myLen ), NULL, ssl );
-
-    if ( nbytes != sizeof( myLen ) ) {
-        rodsLog( LOG_ERROR,
-                 "sslWriteMsgHeader: wrote %d bytes for myLen , expect %d, status = %d",
-                 nbytes, sizeof( myLen ), SYS_HEADER_WRITE_LEN_ERR - errno );
-        freeBBuf( headerBBuf );
-        return SYS_HEADER_WRITE_LEN_ERR - errno;
-    }
-
-    /* now send the header */
-
-    nbytes = sslWrite( headerBBuf->buf, headerBBuf->len, NULL, ssl );
-
-    if ( headerBBuf->len != nbytes ) {
-        rodsLog( LOG_ERROR,
-                 "sslWriteMsgHeader: wrote %d bytes, expect %d, status = %d",
-                 nbytes, headerBBuf->len, SYS_HEADER_WRITE_LEN_ERR - errno );
-        freeBBuf( headerBBuf );
-        return SYS_HEADER_WRITE_LEN_ERR - errno;
-    }
-
-    freeBBuf( headerBBuf );
-
-    return 0;
-}
-
-int
-sslRead( int sock, void *buf, int len,
-         int *bytesRead, struct timeval *tv, SSL *ssl ) {
-    struct timeval timeout;
-
-    /* Initialize the file descriptor set. */
-    fd_set set;
-    FD_ZERO( &set );
-    FD_SET( sock, &set );
-    if ( tv != NULL ) {
-        timeout = *tv;
-    }
-
-    int toRead = len;
-    char *tmpPtr = ( char * ) buf;
-
-    if ( bytesRead != NULL ) {
-        *bytesRead = 0;
-    }
-
-    while ( toRead > 0 ) {
-        if ( SSL_pending( ssl ) == 0 && tv != NULL ) {
-            const int status = select( sock + 1, &set, NULL, NULL, &timeout );
-            if ( status == 0 ) {
-                /* timedout */
-                if ( len - toRead > 0 ) {
-                    return len - toRead;
-                }
-                else {
-                    return SYS_SOCK_READ_TIMEDOUT;
-                }
-            }
-            else if ( status < 0 ) {
-                if ( errno == EINTR ) {
-                    continue;
-                }
-                else {
-                    return SYS_SOCK_READ_ERR - errno;
-                }
-            }
-        }
-        int nbytes = SSL_read( ssl, ( void * ) tmpPtr, toRead );
-        if ( SSL_get_error( ssl, nbytes ) != SSL_ERROR_NONE ) {
-            if ( errno == EINTR ) {
-                /* interrupted */
-                errno = 0;
-                nbytes = 0;
-            }
-            else {
-                break;
-            }
-        }
-
-        toRead -= nbytes;
-        tmpPtr += nbytes;
-        if ( bytesRead != NULL ) {
-            *bytesRead += nbytes;
-        }
-    }
-    return len - toRead;
 }
 
 int
@@ -453,35 +279,6 @@ get_dh2048() {
     }
     DH_set0_pqg(dh, p, nullptr, g);
     return dh;
-}
-
-static int
-sslLoadDHParams( SSL_CTX *ctx, char *file ) {
-    DH *dhparams = NULL;
-    BIO *bio;
-
-    if ( file ) {
-        bio = BIO_new_file( file, "r" );
-        if ( bio ) {
-            dhparams = PEM_read_bio_DHparams( bio, NULL, NULL, NULL );
-            BIO_free( bio );
-        }
-    }
-
-    if ( dhparams == NULL ) {
-        sslLogError( "sslLoadDHParams: can't load DH parameter file. Falling back to built-ins." );
-        dhparams = get_dh2048();
-        if ( dhparams == NULL ) {
-            rodsLog( LOG_ERROR, "sslLoadDHParams: can't load built-in DH params" );
-            return -1;
-        }
-    }
-
-    if ( SSL_CTX_set_tmp_dh( ctx, dhparams ) < 0 ) {
-        sslLogError( "sslLoadDHParams: couldn't set DH parameters" );
-        return -1;
-    }
-    return 0;
 }
 
 static int

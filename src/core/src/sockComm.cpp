@@ -392,41 +392,6 @@ rodsSetSockOpt( int sock, int tcp_buffer_size ) {
 }
 
 int
-connectToRhostPortal( char *rodsHost, int rodsPort,
-                      int cookie, int windowSize ) {
-    int status, nbytes;
-    struct sockaddr_in remoteAddr;
-    int sock, myCookie;
-
-    status = setSockAddr( &remoteAddr, rodsHost, rodsPort );
-    if ( status < 0 ) {
-        rodsLog( LOG_NOTICE,
-                 "connectToRhostPortal: setSockAddr error for %s, errno = %d",
-                 rodsHost, errno );
-        return status;
-    }
-    /* set timeout 11/13/2009 */
-    sock = connectToRhostWithRaddr( &remoteAddr, windowSize, 1 );
-
-    if ( sock < 0 ) {
-        rodsLog( LOG_ERROR,
-                 "connectToRhostPortal: connectTo Rhost %s port %d error, status = %d",
-                 rodsHost, rodsPort, sock );
-        return sock;
-    }
-
-    myCookie = htonl( cookie );
-    nbytes = myWrite( sock, &myCookie, sizeof( myCookie ), NULL );
-
-    if ( nbytes != sizeof( myCookie ) ) {
-        CLOSE_SOCK( sock );
-        return SYS_PORT_COOKIE_ERR;
-    }
-
-    return sock;
-}
-
-int
 connectToRhost( rcComm_t *conn, int connectCnt, int reconnFlag ) {
     int status;
     conn->sock = connectToRhostWithRaddr( &conn->remoteAddr,
@@ -1121,45 +1086,6 @@ int cliSwitchConnect( rcComm_t *conn ) {
 }
 
 int
-getUdpPortFromPortList( portList_t *thisPortList ) {
-    int udpport = 0;
-    udpport = ( thisPortList->portNum & 0xffff0000 ) >> 16;
-    return udpport;
-}
-
-int
-getTcpPortFromPortList( portList_t *thisPortList ) {
-    return thisPortList->portNum & 0xffff;
-}
-
-int
-redirectConnToRescSvr( rcComm_t **conn, dataObjInp_t *dataObjInp,
-                       rodsEnv *myEnv, int reconnFlag ) {
-    int status;
-    char *outHost = NULL;
-
-    if ( dataObjInp->oprType == PUT_OPR ) {
-        status = rcGetHostForPut( *conn, dataObjInp, &outHost );
-    }
-    else if ( dataObjInp->oprType == GET_OPR ) {
-        status = rcGetHostForGet( *conn, dataObjInp, &outHost );
-    }
-    else {
-        rodsLog( LOG_NOTICE,
-                 "redirectConnToRescSvr: Unknown oprType %d\n",
-                 dataObjInp->oprType );
-        return 0;
-    }
-
-    if ( status < 0 || outHost == NULL || strcmp( outHost, THIS_ADDRESS ) == 0 ) {
-        return status;
-    }
-
-    status = rcReconnect( conn, outHost, myEnv, reconnFlag );
-    return status;
-}
-
-int
 rcReconnect( rcComm_t **conn, char *newHost, rodsEnv *myEnv, int reconnFlag ) {
     int status;
     rcComm_t *newConn = NULL;
@@ -1185,18 +1111,3 @@ rcReconnect( rcComm_t **conn, char *newHost, rodsEnv *myEnv, int reconnFlag ) {
     }
 }
 
-int
-mySockClose( int sock ) {
-    // A socket write immediately followed by a socket close can cause the
-    // receiver to get errno 104 (reset by peer) and not receive the message,
-    // even with SO_LINGER. Calling shutdown prevents this behavior.
-#if defined(solaris_platform) || defined(linux_platform) || defined(osx_platform)
-    shutdown( sock, SHUT_WR );
-#endif
-
-#if defined(windows_platform)
-    return closesocket( sock );
-#else
-    return close( sock );
-#endif
-}
