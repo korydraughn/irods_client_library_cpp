@@ -78,43 +78,6 @@ int cipherBlockChaining = 0;
    HASH_TYPE_MD5 and HASH_TYPE_SHA1 */
 static int defaultHashType = HASH_TYPE_MD5;
 
-/*
-  What can be a main routine for some simple tests.
- */
-int
-obftestmain( int argc, char *argv[] ) {
-    char p3[MAX_PASSWORD_LEN];
-    int i;
-
-    obfDebug = 2;
-
-    if ( argc < 2 ) {
-        printf( "Usage: -d|-e\n" );
-        exit( -1 );
-    }
-
-    if ( strcmp( argv[1], "-d" ) == 0 ) {
-        i = obfGetPw( p3 );
-        if ( obfDebug ) {
-            printf( "val  = %d \n", i );
-        }
-    }
-
-    if ( strcmp( argv[1], "-e" ) == 0 ) {
-        i = obfSavePw( 1, 0, 1, "" );
-        if ( obfDebug ) {
-            printf( "val  = %d \n", i );
-        }
-    }
-    return 0;
-}
-
-int
-obfSetDebug( int opt ) {
-    obfDebug = opt;
-    return 0;
-}
-
 int
 obfiGetFilename( char *fileName ) {
     char *envVar = NULL;
@@ -201,41 +164,6 @@ obfGetPw( char *pw ) {
     }
     strcpy( pw, myPwD );
 
-    return 0;
-}
-
-/*
- remove the password file
- opt: if zero, prompt before removing
- opt: if non-zero, don't ask and don't print error;just remove it if it exists.
-*/
-int
-obfRmPw( int opt ) {
-    char fileName[MAX_NAME_LEN + 10];
-    char inbuf[MAX_NAME_LEN + 10];
-
-    if ( int status = obfiGetFilename( fileName ) ) {
-        return status;
-    }
-    boost::filesystem::path filePath( fileName );
-    if ( !boost::filesystem::exists( filePath ) ) {
-        if ( opt == 0 ) {
-            printf( "%s does not exist\n", fileName );
-        }
-        return AUTH_FILE_DOES_NOT_EXIST;
-    }
-    if ( opt == 0 ) {
-        printf( "Remove %s?: ", fileName );
-        const char *fgets_ret = fgets( inbuf, MAX_NAME_LEN, stdin );
-        if ( fgets_ret == NULL || strlen( inbuf ) < 1 || inbuf[0] != 'y' ) {
-            return 0;
-        }
-    }
-    boost::system::error_code error;
-    boost::filesystem::remove( filePath, error );
-    if ( error.value() ) {
-        return UNLINK_FAILED;
-    }
     return 0;
 }
 
@@ -373,32 +301,6 @@ obfSavePw( int promptOpt, int fileOpt, int printOpt, const char *pwArg ) {
         printf( "Successfully wrote %s\n", fileName );
     }
 
-    return 0;
-}
-
-/* various options for temporary auth files/pws */
-int obfTempOps( int tmpOpt ) {
-    char fileName[MAX_NAME_LEN + 10];
-    char pw[MAX_PASSWORD_LEN + 10];
-    int i;
-    if ( tmpOpt == 1 ) { /* store pw flagged as temporary */
-        doTemp = 1;
-    }
-
-    if ( tmpOpt == 2 ) { /* remove the pw file if temporary */
-        i = obfGetPw( pw );
-        strcpy( pw, "           " );
-        if ( i != 0 ) {
-            return i;
-        }
-        if ( isTemp ) {
-            i = obfiGetFilename( fileName );
-            if ( i != 0 ) {
-                return i;
-            }
-            unlink( fileName );
-        }
-    }
     return 0;
 }
 
@@ -953,19 +855,6 @@ obfiGetEnvKey() {
     return 0;
 }
 
-void
-obfSetDefaultHashType( int type ) {
-    defaultHashType = type;
-    if ( obfDebug ) {
-        printf( "hashType now %d\n", defaultHashType );
-    }
-}
-
-int
-obfGetDefaultHashType() {
-    return defaultHashType;
-}
-
 /* Generate a hash string using MD5 or Sha1 */
 void
 obfMakeOneWayHash( int hashType,
@@ -1106,50 +995,6 @@ obfEncodeByKey( const char *in, const char *key, char *out ) {
 }
 
 /*
-  Obfuscate a string using an input key, version 2.  Version two is
-  like the original but uses two key and a hash of them instead of the
-  key itself (to keep the key itself even more undiscoverable).  The
-  second key is a session signature (based on the challenge) (not
-  secret but known to both client and server and unique for each
-  connection).  It also uses a quasi-cipher-block-chaining algorithm
-  and adds a random character (so the 'out' is different even with the
-  same 'in' each time).
-*/
-#define V2_Prefix "A.ObfV2"
-
-void
-obfEncodeByKeyV2( const char *in, const char *key, const char *key2, char *out ) {
-    struct timeval nowtime;
-    char *myKey2;
-    char myKey[200];
-    char myIn[200];
-    int rval;
-
-    strncpy( myIn, V2_Prefix, 10 );
-    strncat( myIn, in, 150 );
-
-    strncpy( myKey, key, 90 );
-    myKey[90] = '\0';
-    strncat( myKey, key2, 100 );
-
-    /*
-     get a pseudo random number
-    */
-    ( void )gettimeofday( &nowtime, ( struct timezone * )0 );
-    rval = nowtime.tv_usec & 0x1f;
-    myIn[0] += rval; /* and add it to the leading character */
-
-
-    myKey2 = obfGetMD5Hash( myKey );
-
-    cipherBlockChaining = 1;
-    obfEncodeByKey( myIn, myKey2, out );
-    cipherBlockChaining = 0;
-    return;
-}
-
-
-/*
   De-obfuscate a string using an input key
 */
 void
@@ -1260,43 +1105,6 @@ obfDecodeByKey( const char *in, const char *key, char *out ) {
             }
         }
     }
-}
-
-/* Version 2, undoes V2 encoding.
-   If encoding is not V2, handles is at V1 (original)
-*/
-void
-obfDecodeByKeyV2( const char *in, const char *key, const char *key2, char *out ) {
-    char *myKey2;
-    static char myOut[200];
-    int i, len, matches;
-    char match[60];
-    char myKey[200];
-
-    strncpy( myKey, key, 90 );
-    myKey[90] = '\0';
-    strncat( myKey, key2, 100 );
-
-    myKey2 = obfGetMD5Hash( myKey );
-    cipherBlockChaining = 1;
-    obfDecodeByKey( in, myKey2, myOut );
-    cipherBlockChaining = 0;
-
-    strncpy( match, V2_Prefix, 10 );
-    len = strlen( V2_Prefix );
-    matches = 1;
-    for ( i = 1; i < len; i++ ) {
-        if ( match[i] != myOut[i] ) {
-            matches = 0;
-        }
-    }
-    if ( matches == 0 ) {
-        obfDecodeByKey( in, key, out );
-        return;
-    }
-
-    strncpy( out, myOut + len, MAX_PASSWORD_LEN ); /* skip prefix */
-    return;
 }
 
 /*

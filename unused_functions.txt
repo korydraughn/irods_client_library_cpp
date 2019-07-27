@@ -142,14 +142,14 @@ x [src/core/src/rcMisc.cpp:3999]: (style) The function 'mySetenvInt' is never us
 [src/core/src/hashtable.cpp:249]: (style) The function 'nextBucket' is never used.
 [src/core/src/hashtable.cpp:284]: (style) The function 'nop' is never used.
 [src/core/src/irods_plugin_name_generator.cpp:20]: (style) The function 'normalize_resource_type' is never used.
-[src/core/src/obf.cpp:1269]: (style) The function 'obfDecodeByKeyV2' is never used.
-[src/core/src/obf.cpp:1121]: (style) The function 'obfEncodeByKeyV2' is never used.
-[src/core/src/obf.cpp:965]: (style) The function 'obfGetDefaultHashType' is never used.
-[src/core/src/obf.cpp:213]: (style) The function 'obfRmPw' is never used.
-[src/core/src/obf.cpp:113]: (style) The function 'obfSetDebug' is never used.
-[src/core/src/obf.cpp:957]: (style) The function 'obfSetDefaultHashType' is never used.
-[src/core/src/obf.cpp:380]: (style) The function 'obfTempOps' is never used.
-[src/core/src/obf.cpp:85]: (style) The function 'obftestmain' is never used.
+x [src/core/src/obf.cpp:1269]: (style) The function 'obfDecodeByKeyV2' is never used.
+x [src/core/src/obf.cpp:1121]: (style) The function 'obfEncodeByKeyV2' is never used.
+x [src/core/src/obf.cpp:965]: (style) The function 'obfGetDefaultHashType' is never used.
+x [src/core/src/obf.cpp:213]: (style) The function 'obfRmPw' is never used.
+x [src/core/src/obf.cpp:113]: (style) The function 'obfSetDebug' is never used.
+x [src/core/src/obf.cpp:957]: (style) The function 'obfSetDefaultHashType' is never used.
+x [src/core/src/obf.cpp:380]: (style) The function 'obfTempOps' is never used.
+x [src/core/src/obf.cpp:85]: (style) The function 'obftestmain' is never used.
 [src/core/src/osauth.cpp:242]: (style) The function 'osauthGetAuth' is never used.
 [src/core/src/osauth.cpp:413]: (style) The function 'osauthGetUsername' is never used.
 [src/core/src/osauth.cpp:36]: (style) The function 'osauthVerifyResponse' is never used.

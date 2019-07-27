@@ -127,24 +127,6 @@ addRErrorMsg( rError_t *myError, int status, const char *msg ) {
 }
 
 int
-replErrorStack( rError_t *srcRError, rError_t *destRError ) {
-    int i, len;
-    rErrMsg_t *errMsg;
-
-    if ( srcRError == NULL || destRError == NULL ) {
-        return USER__NULL_INPUT_ERR;
-    }
-
-    len = srcRError->len;
-
-    for ( i = 0; i < len; i++ ) {
-        errMsg = srcRError->errMsg[i];
-        addRErrorMsg( destRError, errMsg->status, errMsg->msg );
-    }
-    return 0;
-}
-
-int
 freeRError( rError_t *myError ) {
 
     if ( myError == NULL ) {
@@ -173,36 +155,6 @@ freeRErrorContent( rError_t *myError ) {
 
     memset( myError, 0, sizeof( rError_t ) );
 
-    return 0;
-}
-
-//Only split the username from the zone name, based on the first occurence of '#'
-//Further parsing of the username is the responsibility of the database plugin.
-int
-parseUserName( const char * fullUserNameIn, char * userName, char * userZone ) {
-    const char * octothorpePointer = strchr( fullUserNameIn, '#' );
-    const std::string userNameString = octothorpePointer ?
-                                       std::string( fullUserNameIn, octothorpePointer - fullUserNameIn ) :
-                                       std::string( fullUserNameIn );
-    const std::string zoneNameString = octothorpePointer ?
-                                       std::string( octothorpePointer + 1 ) :
-                                       std::string();
-    if ( zoneNameString.find( '#' ) != std::string::npos || userNameString.size() >= NAME_LEN || zoneNameString.size() >= NAME_LEN ) {
-        if ( userName != NULL ) {
-            userName[0] = '\0';
-        }
-        if ( userZone != NULL ) {
-            userZone[0] = '\0';
-        }
-        return USER_INVALID_USERNAME_FORMAT;
-    }
-
-    if ( userName != NULL ) {
-        snprintf( userName, NAME_LEN, "%s", userNameString.c_str() );
-    }
-    if ( userZone != NULL ) {
-        snprintf( userZone, NAME_LEN, "%s", zoneNameString.c_str() );
-    }
     return 0;
 }
 
@@ -255,113 +207,6 @@ myNtohll( rodsLong_t inlonglong,  rodsLong_t *outlonglong ) {
 }
 
 int
-statToRodsStat( rodsStat_t *rodsStat, struct stat *myFileStat ) {
-    if ( rodsStat == NULL || myFileStat == NULL ) {
-        return SYS_INTERNAL_NULL_INPUT_ERR;
-    }
-
-    rodsStat->st_size = myFileStat->st_size;
-    rodsStat->st_dev = myFileStat->st_dev;
-    rodsStat->st_ino = myFileStat->st_ino;
-    rodsStat->st_mode = myFileStat->st_mode;
-    rodsStat->st_nlink = myFileStat->st_nlink;
-    rodsStat->st_uid = myFileStat->st_uid;
-    rodsStat->st_gid = myFileStat->st_gid;
-    rodsStat->st_rdev = myFileStat->st_rdev;
-    rodsStat->st_atim = myFileStat->st_atime;
-    rodsStat->st_mtim = myFileStat->st_mtime;
-    rodsStat->st_ctim = myFileStat->st_ctime;
-#ifndef _WIN32
-    rodsStat->st_blksize = myFileStat->st_blksize;
-    rodsStat->st_blocks = myFileStat->st_blocks;
-#endif
-
-    return 0;
-}
-
-int
-rodsStatToStat( struct stat *myFileStat, rodsStat_t *rodsStat ) {
-    if ( myFileStat == NULL || rodsStat == NULL ) {
-        return SYS_INTERNAL_NULL_INPUT_ERR;
-    }
-
-    myFileStat->st_size = rodsStat->st_size;
-    myFileStat->st_dev = rodsStat->st_dev;
-    myFileStat->st_ino = rodsStat->st_ino;
-    myFileStat->st_mode = rodsStat->st_mode;
-    myFileStat->st_nlink = rodsStat->st_nlink;
-    myFileStat->st_uid = rodsStat->st_uid;
-    myFileStat->st_gid = rodsStat->st_gid;
-    myFileStat->st_rdev = rodsStat->st_rdev;
-    myFileStat->st_atime = rodsStat->st_atim;
-    myFileStat->st_mtime = rodsStat->st_mtim;
-    myFileStat->st_ctime = rodsStat->st_ctim;
-#ifndef _WIN32
-    myFileStat->st_blksize = rodsStat->st_blksize;
-    myFileStat->st_blocks = rodsStat->st_blocks;
-#endif
-
-    return 0;
-}
-
-int
-direntToRodsDirent( struct rodsDirent *dirent, struct dirent *fileDirent ) {
-    if ( dirent == NULL || fileDirent == NULL ) {
-        return SYS_INTERNAL_NULL_INPUT_ERR;
-    }
-
-    strcpy( dirent->d_name, fileDirent->d_name );
-
-#if defined(linux_platform)
-    dirent->d_ino = fileDirent->d_ino;
-    dirent->d_offset = 0;
-    dirent->d_reclen = fileDirent->d_reclen;
-    dirent->d_namlen = _D_EXACT_NAMLEN( fileDirent );
-#elif defined(solaris_platform)
-    dirent->d_ino = fileDirent->d_ino;
-    dirent->d_offset = fileDirent->d_off;
-    dirent->d_reclen = fileDirent->d_reclen;
-    dirent->d_namlen = 0;
-#elif defined(aix_platform)
-    dirent->d_ino = fileDirent->d_ino;
-    dirent->d_offset = fileDirent->d_offset;
-    dirent->d_reclen = fileDirent->d_reclen;
-    dirent->d_namlen = fileDirent->d_namlen;
-#elif defined(sgi_platform)
-    dirent->d_ino = fileDirent->d_ino;
-    dirent->d_offset = fileDirent->d_off;
-    dirent->d_reclen = fileDirent->d_reclen;
-    dirent->d_namlen = 0;
-#elif defined(sunos_platform)
-    dirent->d_ino = fileDirent->d_fileno;
-    dirent->d_offset = fileDirent->d_off;
-    dirent->d_reclen = fileDirent->d_reclen;
-    dirent->d_namlen = fileDirent->d_namlen;
-#elif defined(alpha_platform)
-    dirent->d_ino = fileDirent->d_ino;
-    dirent->d_offset = 0;
-    dirent->d_reclen = fileDirent->d_reclen;
-    dirent->d_namlen = fileDirent->d_namlen;
-#elif defined(osx_platform)
-    dirent->d_ino = fileDirent->d_ino;
-    dirent->d_offset = 0;
-    dirent->d_reclen = fileDirent->d_reclen;
-    dirent->d_namlen = fileDirent->d_namlen;
-#elif defined(windows_platform)
-    dirent->d_ino = fileDirent->d_ino;
-    dirent->d_offset = 0;
-    dirent->d_reclen = 0;
-    dirent->d_namlen = 0;
-#else   /* unknown. use linux */
-    dirent->d_ino = fileDirent->d_ino;
-    dirent->d_offset = 0;
-    dirent->d_reclen = fileDirent->d_reclen;
-    dirent->d_namlen = _D_EXACT_NAMLEN( fileDirent );
-#endif
-    return 0;
-}
-
-int
 freeDataObjInfo( dataObjInfo_t *dataObjInfo ) {
     if ( dataObjInfo == NULL ) {
         return 0;
@@ -376,106 +221,6 @@ freeDataObjInfo( dataObjInfo_t *dataObjInfo ) {
     free( dataObjInfo );
     dataObjInfo = 0;
     return 0;
-}
-
-int
-freeAllDataObjInfo( dataObjInfo_t *dataObjInfoHead ) {
-    dataObjInfo_t *tmpDataObjInfo, *nextDataObjInfo;
-
-    tmpDataObjInfo = dataObjInfoHead;
-    while ( tmpDataObjInfo != NULL ) {
-        nextDataObjInfo = tmpDataObjInfo->next;
-        freeDataObjInfo( tmpDataObjInfo );
-        tmpDataObjInfo = nextDataObjInfo;
-    }
-    return 0;
-}
-
-/* queDataObjInfo - queue the input dataObjInfo in dataObjInfoHead queue.
- * Input
- * int singleInfoFlag - 1 - the input dataObjInfo is a single dataObjInfo.
- *                      0 - the input dataObjInfo is a link list
- * int topFlag - 1 - queue the input dataObjInfo at the head of the queue
- *               0 - queue the input dataObjInfo at the bottom of the
- *                   queue.
- */
-int queDataObjInfo(
-    dataObjInfo_t** dataObjInfoHead,
-    dataObjInfo_t*  dataObjInfo,
-    int             singleInfoFlag,
-    int             topFlag ) {
-
-    dataObjInfo_t *tmpDataObjInfo;
-
-    if ( dataObjInfo == NULL ) {
-        return -1;
-    }
-
-    if ( *dataObjInfoHead == NULL ) {
-        *dataObjInfoHead = dataObjInfo;
-        if ( singleInfoFlag > 0 ) {
-            dataObjInfo->next = NULL;
-        }
-    }
-    else {
-        if ( topFlag > 0 ) {
-            dataObjInfo_t *savedDataObjInfo;
-
-            savedDataObjInfo = *dataObjInfoHead;
-            *dataObjInfoHead = dataObjInfo;
-            if ( singleInfoFlag > 0 ) {
-                ( *dataObjInfoHead )->next = savedDataObjInfo;
-            }
-            else {
-                /* have to drill down to find the last DataObjInfo */
-                tmpDataObjInfo = *dataObjInfoHead;
-                while ( tmpDataObjInfo->next != NULL ) {
-                    tmpDataObjInfo = tmpDataObjInfo->next;
-                }
-                tmpDataObjInfo->next = savedDataObjInfo;
-            }
-        }
-        else {
-            tmpDataObjInfo = *dataObjInfoHead;
-            while ( tmpDataObjInfo->next != NULL ) {
-                tmpDataObjInfo = tmpDataObjInfo->next;
-            }
-            tmpDataObjInfo->next = dataObjInfo;
-
-            if ( singleInfoFlag > 0 ) {
-                dataObjInfo->next = NULL;
-            }
-        }
-    }
-
-    return 0;
-}
-// =-=-=-=-=-=-=-
-// JMC - backport 4590
-int
-dequeDataObjInfo( dataObjInfo_t **dataObjInfoHead, dataObjInfo_t *dataObjInfo ) {
-    dataObjInfo_t *tmpDataObjInfo;
-    dataObjInfo_t *prevDataObjInfo = NULL;
-
-    if ( dataObjInfo == NULL || dataObjInfoHead == NULL ) {
-        return -1;
-    }
-
-    tmpDataObjInfo = *dataObjInfoHead;
-    while ( tmpDataObjInfo != NULL ) {
-        if ( tmpDataObjInfo == dataObjInfo ) {
-            if ( prevDataObjInfo == NULL ) {
-                *dataObjInfoHead = tmpDataObjInfo->next;
-            }
-            else {
-                prevDataObjInfo->next = tmpDataObjInfo->next;
-            }
-            return 0;
-        }
-        prevDataObjInfo = tmpDataObjInfo;
-        tmpDataObjInfo = tmpDataObjInfo->next;
-    }
-    return -1;
 }
 
 char *
@@ -534,32 +279,6 @@ replKeyVal( const keyValPair_t *srcCondInput, keyValPair_t *destCondInput ) {
         addKeyVal( destCondInput, srcCondInput->keyWord[i],
                    srcCondInput->value[i] );
     }
-    return 0;
-}
-
-int copyKeyVal(
-    const keyValPair_t* _src,
-    keyValPair_t*       _dst ) {
-    // =-=-=-=-=-=-=-
-    // blatantly copy the src kvp to the dst
-    for ( int i = 0; i < _src->len; ++i ) {
-        addKeyVal( _dst, _src->keyWord[i], _src->value[i] );
-
-    }
-
-    return 0;
-}
-
-int
-replDataObjInp( dataObjInp_t *srcDataObjInp, dataObjInp_t *destDataObjInp ) {
-    *destDataObjInp = *srcDataObjInp;
-
-    destDataObjInp->condInput.len = 0;
-    destDataObjInp->condInput.keyWord = NULL;
-    destDataObjInp->condInput.value = NULL;
-
-    replKeyVal( &srcDataObjInp->condInput, &destDataObjInp->condInput );
-    replSpecColl( srcDataObjInp->specColl, &destDataObjInp->specColl );
     return 0;
 }
 
@@ -750,36 +469,6 @@ addStrArray( strArray_t *strArray, char *value ) {
 }
 
 int
-resizeStrArray( strArray_t *strArray, int newSize ) {
-    int i, newLen;
-    char *newValue;
-
-    if ( newSize > strArray->size ||
-            ( strArray->len % PTR_ARRAY_MALLOC_LEN ) == 0 ) {
-        int oldSize = strArray->size;
-        /* have to redo it */
-        if ( strArray->size > newSize ) {
-            newSize = strArray->size;
-        }
-        else {
-            strArray->size = newSize;
-        }
-        newLen = strArray->len + PTR_ARRAY_MALLOC_LEN;
-        newValue = ( char * ) malloc( newLen * newSize );
-        memset( newValue, 0, newLen * newSize );
-        for ( i = 0; i < strArray->len; i++ ) {
-            rstrcpy( &newValue[i * newSize], &strArray->value[i * oldSize],
-                     newSize );
-        }
-        if ( strArray->value != NULL ) {
-            free( strArray->value );
-        }
-        strArray->value = newValue;
-    }
-    return 0;
-}
-
-int
 clearKeyVal( keyValPair_t *condInput ) {
 
     if ( condInput == NULL || condInput->len < 1 ) {
@@ -833,23 +522,6 @@ clearInxVal( inxValPair_t *inxValPair ) {
     return 0;
 }
 
-int
-freeGenQueryInp( genQueryInp_t **genQueryInp ) {
-    if ( genQueryInp == NULL ) {
-        return 0;
-    }
-
-    if ( *genQueryInp == NULL ) {
-        return 0;
-    }
-
-    clearGenQueryInp( *genQueryInp );
-    free( *genQueryInp );
-    *genQueryInp = NULL;
-
-    return 0;
-}
-
 void
 clearGenQueryInp( void* voidInp ) {
 
@@ -897,87 +569,6 @@ clearGenQueryOut( void* voidInp ) {
         }
     }
     return;
-}
-
-/* catGenQueryOut - Concatenate genQueryOut to targGenQueryOut up to maxRowCnt.
- * It is assumed that the two genQueryOut have the same attriInx and
- * len for each attri.
- *
- */
-int
-catGenQueryOut( genQueryOut_t *targGenQueryOut, genQueryOut_t *genQueryOut,
-                int maxRowCnt ) {
-    int i;
-    int totalRowCnt;
-
-    /* do some sanity checks */
-
-
-    if ( targGenQueryOut == NULL || genQueryOut == NULL ) {
-        return USER__NULL_INPUT_ERR;
-    }
-
-    if ( genQueryOut->rowCnt == 0 ) {
-        return 0;
-    }
-
-    if ( ( totalRowCnt = targGenQueryOut->rowCnt + genQueryOut->rowCnt ) >
-            maxRowCnt ) {
-        rodsLog( LOG_ERROR,
-                 "catGenQueryOut: total rowCnt %d > %d",
-                 targGenQueryOut->rowCnt + genQueryOut->rowCnt, maxRowCnt );
-        return SYS_STRUCT_ELEMENT_MISMATCH;
-    }
-
-
-    if ( targGenQueryOut->attriCnt != genQueryOut->attriCnt ) {
-        rodsLog( LOG_ERROR,
-                 "catGenQueryOut: attriCnt mismatch %d != %d",
-                 targGenQueryOut->attriCnt, genQueryOut->attriCnt );
-        return SYS_STRUCT_ELEMENT_MISMATCH;
-    }
-
-    for ( i = 0; i < genQueryOut->attriCnt; i++ ) {
-        if ( targGenQueryOut->sqlResult[i].attriInx !=
-                genQueryOut->sqlResult[i].attriInx ) {
-            rodsLog( LOG_ERROR,
-                     "catGenQueryOut: attriInx mismatch %d != %d",
-                     targGenQueryOut->sqlResult[i].attriInx,
-                     genQueryOut->sqlResult[i].attriInx );
-            return SYS_STRUCT_ELEMENT_MISMATCH;
-        }
-        if ( targGenQueryOut->sqlResult[i].len !=
-                genQueryOut->sqlResult[i].len ) {
-            rodsLog( LOG_ERROR,
-                     "catGenQueryOut: len mismatch %d != %d",
-                     targGenQueryOut->sqlResult[i].len, genQueryOut->sqlResult[i].len );
-            return SYS_STRUCT_ELEMENT_MISMATCH;
-        }
-    }
-
-    for ( i = 0; i < genQueryOut->attriCnt; i++ ) {
-        char *tmpValue;
-        int len;
-
-        if ( ( len = genQueryOut->sqlResult[i].len ) <= 0 ) {
-            continue;
-        }
-        if ( ( tmpValue = ( char * )malloc( totalRowCnt * len ) ) == 0 ) {
-            return SYS_MALLOC_ERR - errno;
-        }
-        if ( targGenQueryOut->sqlResult[i].value != NULL ) {
-            memcpy( tmpValue, targGenQueryOut->sqlResult[i].value,
-                    len * targGenQueryOut->rowCnt );
-            free( targGenQueryOut->sqlResult[i].value );
-        }
-        targGenQueryOut->sqlResult[i].value = tmpValue;
-        tmpValue += len * targGenQueryOut->rowCnt;
-        memcpy( tmpValue, genQueryOut->sqlResult[i].value,
-                len * genQueryOut->rowCnt );
-    }
-    targGenQueryOut->rowCnt = totalRowCnt;
-
-    return 0;
 }
 
 void
@@ -1131,19 +722,6 @@ clearDataObjCopyInp( void* voidInp ) {
 }
 
 int
-freeAllRescQuota( rescQuota_t *rescQuotaHead ) {
-    rescQuota_t *tmpRescQuota, *nextRescQuota;
-
-    tmpRescQuota = rescQuotaHead;
-    while ( tmpRescQuota != NULL ) {
-        nextRescQuota = tmpRescQuota->next;
-        free( tmpRescQuota );
-        tmpRescQuota = nextRescQuota;
-    }
-    return 0;
-}
-
-int
 parseMultiStr( char *strInput, strArray_t *strArray ) {
     char *startPtr, *endPtr;
     int endReached = 0;
@@ -1243,64 +821,6 @@ getLocalTimeStr( struct tm *mytm, char *timeStr ) {
     }
 
     return 0;
-}
-
-/* Update the input time string to be offset minutes ahead of the
-   input value.  timeStr is input and ouput, in the form:
-   2006-10-25-10.52.43
-   0123456789012345678
-   Offset the number of minutes to add.
-   This is based on getOffsetTimeStr.
- */
-void
-updateOffsetTimeStr( char *timeStr, int offset ) {
-    time_t myTime;
-    struct tm *mytm;
-    time_t newTime;
-    char s[50];
-
-    myTime = time( NULL );
-    mytm = localtime( &myTime );
-
-    rstrcpy( s, timeStr, 49 );
-
-    s[19] = '\0';
-    mytm->tm_sec = atoi( &s[17] );
-    s[16] = '\0';
-    mytm->tm_min = atoi( &s[14] );
-    s[13] = '\0';
-    mytm->tm_hour = atoi( &s[11] );
-    s[10] = '\0';
-    mytm->tm_mday = atoi( &s[8] );
-    s[7] = '\0';
-    mytm->tm_mon = atoi( &s[5] ) - 1;
-    s[4] = '\0';
-    mytm->tm_year = atoi( &s[0] ) - 1900;
-
-    mytm->tm_min += offset; /* offset by the input minutes */
-
-    newTime = mktime( mytm );
-    mytm = localtime( &newTime );
-
-    snprintf( timeStr, TIME_LEN, "%4d-%2d-%2d-%2d.%2d.%2d",
-              mytm->tm_year + 1900, mytm->tm_mon + 1, mytm->tm_mday,
-              mytm->tm_hour, mytm->tm_min, mytm->tm_sec );
-
-    if ( timeStr[5] == ' ' ) {
-        timeStr[5] = '0';
-    }
-    if ( timeStr[8] == ' ' ) {
-        timeStr[8] = '0';
-    }
-    if ( timeStr[11] == ' ' ) {
-        timeStr[11] = '0';
-    }
-    if ( timeStr[14] == ' ' ) {
-        timeStr[14] = '0';
-    }
-    if ( timeStr[17] == ' ' ) {
-        timeStr[17] = '0';
-    }
 }
 
 int
@@ -1828,15 +1348,6 @@ getAttrIdFromAttrName( char * cname ) {
 }
 
 int
-showAttrNames() {
-    int i;
-    for ( i = 0; i < NumOfColumnNames ; i++ ) {
-        printf( "%s\n", columnNames[i].columnName );
-    }
-    return 0;
-}
-
-int
 separateSelFuncFromAttr( char * t, char **aggOp, char **colNm ) {
     char *s;
 
@@ -2066,52 +1577,6 @@ fillGenQueryInpFromStrCond( char * str, genQueryInp_t * genQueryInp ) {
 }
 
 int
-printGenQueryOut( FILE * fd, char * format, char * hint, genQueryOut_t * genQueryOut ) {
-    int i = 0, n = 0, j = 0;
-    sqlResult_t *v[MAX_SQL_ATTR];
-    char * cname[MAX_SQL_ATTR];
-
-    if ( hint != NULL &&  strlen( hint ) > 0 ) {
-        //i = printHintedGenQueryOut(fd,format,hint, genQueryOut);
-        return i;
-    }
-
-    n = genQueryOut->attriCnt;
-
-    for ( i = 0; i < n; i++ ) {
-        v[i] = &genQueryOut->sqlResult[i];
-        cname[i] = getAttrNameFromAttrId( v[i]->attriInx );
-        if ( cname[i] == NULL ) {
-            return NO_COLUMN_NAME_FOUND;
-        }
-    }
-
-    try {
-        for ( i = 0; i < genQueryOut->rowCnt; i++ ) {
-            if ( format == NULL || strlen( format ) == 0 ) {
-                for ( j = 0; j < n; j++ ) {
-                    fprintf( fd, "%s = %s\n", cname[j], &v[j]->value[v[j]->len * i] );
-                }
-                fprintf( fd, "------------------------------------------------------------\n" );
-            }
-            else {
-                boost::format formatter( format );
-                for ( int j = 0; j < n; j++ ) {
-                    formatter % &v[j]->value[v[j]->len * i];
-                }
-                std::stringstream ss; ss << formatter;
-                fprintf( fd, "%s\n", ss.str().c_str() );
-            }
-        }
-    }
-    catch ( const boost::io::format_error& _e ) {
-        std::cerr << _e.what() << std::endl;
-    }
-
-    return 0;
-}
-
-int
 getSpecCollTypeStr( specColl_t * specColl, char * outStr ) {
     int i;
 
@@ -2306,40 +1771,6 @@ freeRodsObjStat( rodsObjStat_t * rodsObjStat ) {
     return 0;
 }
 
-int
-parseHostAddrStr( char * hostAddr, rodsHostAddr_t * addr ) {
-    char port[LONG_NAME_LEN];
-    char buffer[LONG_NAME_LEN];
-
-    if ( hostAddr == NULL || addr == NULL ) {
-        return SYS_INTERNAL_NULL_INPUT_ERR;
-    }
-    if ( splitPathByKey( hostAddr, buffer, LONG_NAME_LEN, port, SHORT_STR_LEN, ':' ) < 0 ) {
-        rstrcpy( addr->hostAddr, hostAddr, LONG_NAME_LEN );
-        addr->portNum = 0;
-    }
-    else {
-        rstrcpy( addr->hostAddr, buffer, LONG_NAME_LEN );
-        addr->portNum = atoi( port );
-    }
-    return 0;
-}
-
-/*
-   Print some release information.
-   Used by the iCommands when printting the help text.
- */
-void
-printReleaseInfo( char * cmdName ) {
-    char tmp[40];
-    strncpy( tmp, RODS_REL_VERSION, 40 );   /* to skip over the 'rods' part
-                                                             of the string */
-    tmp[39] = '\0';
-    printf( "\niRODS Version %s                %s\n",
-            ( char* )&tmp[4], cmdName );
-    return;
-}
-
 unsigned int
 seedRandom() {
     unsigned int seed;
@@ -2461,91 +1892,6 @@ fillAttriArrayOfBulkOprInp( char * objPath, int dataMode, char * inpChksum,
 }
 
 int
-readToByteBuf( int fd, bytesBuf_t * bytesBuf ) {
-    int toRead, buflen, nbytes;
-    char *bufptr;
-
-    if ( bytesBuf->len <= 0 ) {
-        /* use default */
-        buflen = INIT_SZ_FOR_EXECMD_BUF;
-    }
-    else {
-        /* sanity check */
-        buflen = bytesBuf->len;
-        if ( buflen > MAX_SZ_FOR_EXECMD_BUF ) {
-            return SYS_REQUESTED_BUF_TOO_LARGE;
-        }
-    }
-    bytesBuf->len = 0;
-    bytesBuf->buf = bufptr = ( char * )malloc( buflen );
-    toRead = buflen;
-
-    while ( 1 ) {
-        nbytes = myRead( fd, bufptr, toRead, NULL, NULL );
-        if ( nbytes == toRead ) { /* more */
-            char *tmpPtr;
-
-            bytesBuf->len += nbytes;
-            if ( buflen >= MAX_SZ_FOR_EXECMD_BUF ) {
-                return EXEC_CMD_OUTPUT_TOO_LARGE;
-            }
-            else {
-                buflen = 4 * buflen;
-                if ( buflen > MAX_SZ_FOR_EXECMD_BUF ) {
-                    buflen = MAX_SZ_FOR_EXECMD_BUF;
-                }
-                toRead = buflen - bytesBuf->len;
-                tmpPtr = ( char* )bytesBuf->buf;
-                bytesBuf->buf = malloc( buflen );
-                memcpy( bytesBuf->buf, tmpPtr, bytesBuf->len );
-                free( tmpPtr );
-                bufptr = ( char * ) bytesBuf->buf + bytesBuf->len;
-            }
-        }
-        else {
-            if ( nbytes > 0 ) {
-                bytesBuf->len += nbytes;
-            }
-            if ( bytesBuf->len <= 0 ) {
-                free( bytesBuf->buf );
-                bytesBuf->buf = NULL;
-            }
-            break;
-        }
-    }
-    if ( nbytes < 0 ) {
-        return nbytes;
-    }
-    else {
-        return 0;
-    }
-}
-
-int
-writeFromByteBuf( int fd, bytesBuf_t * bytesBuf ) {
-    int toWrite, nbytes;
-    char *bufptr;
-
-    bufptr = ( char * )bytesBuf->buf;
-    toWrite = bytesBuf->len;
-    while ( ( nbytes = myWrite( fd, bufptr, toWrite, NULL ) ) >= 0 ) {
-        toWrite -= nbytes;
-        bufptr += nbytes;
-        if ( toWrite <= 0 ) {
-            break;
-        }
-    }
-    close( fd );
-
-    if ( toWrite != 0 ) {
-        return SYS_COPY_LEN_ERR - errno;
-    }
-    else {
-        return 0;
-    }
-}
-
-int
 setForceFlagForRestart( bulkOprInp_t * bulkOprInp, bulkOprInfo_t * bulkOprInfo ) {
     if ( bulkOprInp == NULL || bulkOprInfo == NULL ) {
         return USER__NULL_INPUT_ERR;
@@ -2631,144 +1977,6 @@ clearAuthResponseInp( void * inauthResponseInp ) {
     memset( authResponseInp, 0, sizeof( authResponseInp_t ) );
 
     return;
-}
-
-char *trimPrefix( char * str ) {
-    int i = 0;
-    while ( str[i] != ' ' ) {
-        i++;
-    }
-    while ( str[i] == ' ' ) {
-        i++;
-    }
-    memmove( str, str + i, strlen( str ) + 1 - i );
-    return str;
-}
-
-char *trimSpaces( char * str ) {
-    char *p = str;
-    char *psrc = str;
-
-    while ( *psrc != '\0' && isspace( *psrc ) ) {
-        psrc++;
-    }
-
-    while ( *psrc != '\0' ) {
-        *( p++ ) = *( psrc++ );
-    }
-
-    p--;
-    while ( isspace( *p ) && p - str >= 0 ) {
-        p--;
-    }
-
-    p++;
-    *p = '\0';
-
-    return str;
-
-}
-
-int startsWith( const char * str, const char * prefix ) {
-    return str == strstr( str, prefix );
-}
-
-int convertListToMultiString( char * strInput, int input ) {
-    if ( strcmp( strInput, "null" ) == 0 ) {
-        return 0;
-    }
-    char *src = strdup( strInput );
-
-    char *p = strInput;
-    char *psrc = src;
-
-    /* replace % with %% */
-    while ( *psrc != '\0' ) {
-        if ( *psrc == '%' ) {
-            *( p++ ) = '%';
-            *( p++ ) = '%';
-            psrc++;
-        }
-        else {
-            *( p++ ) = *( psrc++ );
-        }
-    }
-    *p = '\0';
-
-    free( src );
-
-    /* replace , with % and remove extra spaces */
-    p = strInput;
-    psrc = strInput;
-    while ( *psrc != '\0' ) {
-        /* variable name */
-        while ( !isspace( *psrc ) && *psrc != '=' && *psrc != ',' && *psrc != '\0' ) {
-            *( p++ ) = *( psrc++ );
-        }
-
-        /* skip spaces */
-        while ( isspace( *psrc ) ) {
-            psrc++;
-        }
-        if ( input ) {
-            if ( *psrc == '=' ) {
-                /* assignment */
-                *( p++ ) = *( psrc++ );
-
-                int inString = 0;
-                char delim = '\0';
-                while ( *psrc != '\0' ) {
-                    if ( inString ) {
-                        if ( *psrc == delim ) {
-                            inString = 0;
-                        }
-                        else if ( *psrc == '\\' ) {
-                            *( p++ ) = *( psrc++ );
-                            if ( *psrc == '\0' ) {
-                                return -1;
-                            }
-                        }
-                        *( p++ ) = *( psrc++ );
-                    }
-                    else {
-                        if ( *psrc == ',' ) {
-                            *( p++ ) = '%';
-                            psrc++;
-                            break;
-                        }
-                        else {
-                            if ( *psrc == '\'' || *psrc == '\"' ) {
-                                inString = 1;
-                                delim = *psrc;
-                            }
-                            *( p++ ) = *( psrc++ );
-                        }
-                    }
-                }
-            }
-            else {
-                return -1;
-            }
-        }
-        else {
-            if ( *psrc == '\0' ) {
-                break;
-            }
-            else if ( *psrc == ',' ) {
-                *( p++ ) = '%';
-                psrc++;
-            }
-            else {
-                return -1;
-            }
-        }
-        /* skip spaces */
-        while ( isspace( *psrc ) ) {
-            psrc++;
-        }
-    }
-    *p = '\0';
-    return 0;
 }
 
 int
