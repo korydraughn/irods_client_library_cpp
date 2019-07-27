@@ -217,34 +217,6 @@ namespace irods {
     } // do_client_server_negotiation_for_client
 
 /// =-=-=-=-=-=-=-
-/// @brief function which determines if a client/server negotiation is needed
-///        on the server side
-    bool do_client_server_negotiation_for_server( ) {
-        // =-=-=-=-=-=-=-
-        // check the SP_OPTION for the string stating a negotiation is requested
-        char* opt_ptr = getenv( RODS_CS_NEG );
-
-        // =-=-=-=-=-=-=-
-        // if it is not set then move on
-        if ( !opt_ptr || strlen( opt_ptr ) == 0 ) {
-            return false;
-        }
-
-        // =-=-=-=-=-=-=-
-        // if it is set then check for our magic token which requests
-        // the negotiation, if its not there then return success
-        std::string opt_str( opt_ptr );
-        if ( std::string::npos == opt_str.find( REQ_SVR_NEG ) ) {
-            return false;
-        }
-
-        // =-=-=-=-=-=-=-
-        // otherwise, its a go.
-        return true;
-
-    } // do_client_server_negotiation_for_server
-
-/// =-=-=-=-=-=-=-
 /// @brief function which manages the TLS and Auth negotiations with the client
     error client_server_negotiation_for_client(
         irods::network_object_ptr _ptr,
@@ -598,44 +570,4 @@ namespace irods {
     } // read_client_server_negotiation_message
 
 }; // namespace irods
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -148,62 +148,6 @@ rSplitStr( const char *inStr, char* outStr1, size_t maxOutLen1,
     }
     return 0;
 }
-/* copyStrFromBuf - copy a string from buf to outStr, skipping white space
- * and comment. also advance buf pointer
- * returns the len of string copied
- */
-
-int
-copyStrFromBuf( char **buf, char *outStr, int maxOutLen ) {
-    char *bufPtr, *outPtr;
-    int len;
-    int gotSpace;
-
-    bufPtr = *buf;
-    gotSpace = 0;
-
-    /* skip over any space */
-
-    while ( 1 ) {
-        if ( *bufPtr == '\0' || *bufPtr == '\n' ) {
-            return 0;
-        }
-        /* '#' must be preceded by a space to be a valid comment.
-         * the calling routine must check if the line starts with a # */
-
-        if ( *bufPtr == '#' && gotSpace > 0 ) {
-            *outStr = '\0';
-            return 0;
-        }
-
-        if ( isspace( *bufPtr ) ) {
-            bufPtr ++;
-            gotSpace ++;
-            continue;
-        }
-        else {
-            break;
-        }
-    }
-
-    len = 0;
-    outPtr = outStr;
-    while ( !isspace( *bufPtr ) && *bufPtr != '\0' ) {
-        len++;
-        if ( len >= maxOutLen ) {
-            *outStr = '\0';
-            return USER_STRLEN_TOOLONG;
-        }
-        *outPtr = *bufPtr;
-        outPtr++;
-        bufPtr++;
-    }
-
-    *outPtr = '\0';
-    *buf = bufPtr;
-
-    return len;
-}
 
 int
 isAllDigit( const char * myStr ) {
@@ -292,30 +236,3 @@ trimQuotes( char * s ) {
     return 0;
 }
 
-int
-checkStringForSystem( const char * inString ) {
-    if ( inString == NULL ) {
-        return 0;
-    }
-    if ( boost::regex_match( inString, boost::regex( "[a-zA-Z0-9,./ ]*" ) ) ) {
-        return 0;
-    }
-    return USER_INPUT_STRING_ERR;
-}
-
-/*
- * Check if inString is a valid email address.
- * This function only do a simple check that inString contains only a predefined set of characters.
- * It does not check the structure.
- * And this set of characters is a subset of that allowed in the RFCs.
- */
-int
-checkStringForEmailAddress( const char * inString ) {
-    if ( inString == NULL ) {
-        return 0;
-    }
-    if ( boost::regex_match( inString, boost::regex( "[-a-zA-Z0-9,./+*_@]*" ) ) ) {
-        return 0;
-    }
-    return USER_INPUT_STRING_ERR;
-}

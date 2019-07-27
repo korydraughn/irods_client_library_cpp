@@ -164,10 +164,3 @@ size_t region_size( Region *r ) {
     return s;
 }
 #endif
-
-/* tests */
-void assert( int res ) {
-    if ( !res ) {
-        printf( "error" );
-    }
-}

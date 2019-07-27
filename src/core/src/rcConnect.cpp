@@ -80,6 +80,10 @@ rcComm_t* _rcConnect(
 
         if (conn->irodsProt != NATIVE_PROT && conn->irodsProt != XML_PROT) {
             rodsLog(LOG_ERROR, "Invalid protocol value.");
+
+            std::free(conn->thread_ctx);
+            std::free(conn);
+
             return nullptr;
         }
     }

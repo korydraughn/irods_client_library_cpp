@@ -64,51 +64,6 @@ extern "C" {
         return authFileName;
     }
 
-    /* convert either an integer value or a name matching the defines, to
-       a value for the Logging Level */
-    int
-    convertLogLevel( char *inputStr ) {
-        int i;
-        i = atoi( inputStr );
-        if ( i > 0 && i <= LOG_SQL ) {
-            return i;
-        }
-        if ( strcmp( inputStr, "LOG_SQL" ) == 0 ) {
-            return LOG_SQL;
-        }
-        if ( strcmp( inputStr, "LOG_SYS_FATAL" ) == 0 ) {
-            return LOG_SYS_FATAL;
-        }
-        if ( strcmp( inputStr, "LOG_SYS_WARNING" ) == 0 ) {
-            return LOG_SYS_WARNING;
-        }
-        if ( strcmp( inputStr, "LOG_ERROR" ) == 0 ) {
-            return LOG_ERROR;
-        }
-        if ( strcmp( inputStr, "LOG_NOTICE" ) == 0 ) {
-            return LOG_NOTICE;
-        }
-        if ( strcmp( inputStr, "LOG_DEBUG" ) == 0 ) {
-            return LOG_DEBUG;
-        }
-        if ( strcmp( inputStr, "LOG_DEBUG6" ) == 0 ) {
-            return LOG_DEBUG6;
-        }
-        if ( strcmp( inputStr, "LOG_DEBUG7" ) == 0 ) {
-            return LOG_DEBUG7;
-        }
-        if ( strcmp( inputStr, "LOG_DEBUG8" ) == 0 ) {
-            return LOG_DEBUG8;
-        }
-        if ( strcmp( inputStr, "LOG_DEBUG9" ) == 0 ) {
-            return LOG_DEBUG9;
-        }
-        if ( strcmp( inputStr, "LOG_DEBUG10" ) == 0 ) {
-            return LOG_DEBUG10;
-        }
-        return 0;
-    }
-
     int getRodsEnv( rodsEnv *rodsEnvArg ) {
         if ( !rodsEnvArg ) {
             return SYS_INVALID_INPUT_PARAM;
@@ -119,20 +74,6 @@ extern "C" {
     }
 
     void _getRodsEnv( rodsEnv &rodsEnvArg ) {
-        memset( &rodsEnvArg, 0, sizeof( rodsEnv ) );
-        getRodsEnvFromFile( &rodsEnvArg );
-        getRodsEnvFromEnv( &rodsEnvArg );
-        createRodsEnvDefaults( &rodsEnvArg );
-    }
-
-    void _reloadRodsEnv( rodsEnv &rodsEnvArg ) {
-        try {
-            irods::environment_properties::instance().capture();
-        } catch ( const irods::exception& e ) {
-            irods::log(e);
-            return;
-        }
-
         memset( &rodsEnvArg, 0, sizeof( rodsEnv ) );
         getRodsEnvFromFile( &rodsEnvArg );
         getRodsEnvFromEnv( &rodsEnvArg );
@@ -708,87 +649,6 @@ extern "C" {
         }
 
         return 0;
-    }
-
-
-    /*
-      find the next delimited token and terminate the string with matching quotes
-    */
-    char *findNextTokenAndTerm( char *inPtr ) {
-        char *myPtr = 0;
-        char *savePtr = 0;
-        char *nextPtr = 0;
-        int whiteSpace = 0;
-        myPtr = inPtr;
-        whiteSpace = 1;
-        for ( ;; myPtr++ ) {
-            if ( *myPtr == ' ' || *myPtr == '=' ) {
-                continue;
-            }
-            if ( *myPtr == '"' && whiteSpace ) {
-                myPtr++;
-                savePtr = myPtr;
-                for ( ;; ) {
-                    if ( *myPtr == '"' ) {
-                        nextPtr = myPtr + 1;
-                        if ( *nextPtr == ' ' || *nextPtr == '\n'  || *nextPtr == '\0' ) {
-                            /* embedded "s are OK */
-                            *myPtr = '\0';
-                            return savePtr;
-                        }
-                    }
-                    if ( *myPtr == '\n' ) {
-                        *myPtr = '\0';
-                    }
-                    if ( *myPtr == '\0' ) {
-                        /* terminated without a corresponding ", so backup and
-                           put the starting one back */
-                        savePtr--;
-                        *savePtr = '"';
-                        return savePtr;
-                    }
-                    myPtr++;
-                }
-            }
-            if ( *myPtr == '\'' && whiteSpace ) {
-                myPtr++;
-                savePtr = myPtr;
-                for ( ;; ) {
-                    if ( *myPtr == '\'' ) {
-                        nextPtr = myPtr + 1;
-                        if ( *nextPtr == ' ' || *nextPtr == '\n'  || *nextPtr == '\0' ) {
-                            /* imbedded 's are OK */
-                            *myPtr = '\0';
-                            return savePtr;
-                        }
-                    }
-                    if ( *myPtr == '\n' ) {
-                        *myPtr = '\0';
-                    }
-                    if ( *myPtr == '\0' ) {
-                        /* terminated without a corresponding ", so backup and
-                           put the starting one back */
-                        savePtr--;
-                        *savePtr = '\'';
-                        return savePtr;
-                    }
-                    myPtr++;
-                }
-            }
-            if ( whiteSpace ) {
-                savePtr = myPtr;
-            }
-            whiteSpace = 0;
-            if ( *myPtr == '\n' ) {
-                *myPtr = '\0';
-            }
-            if ( *myPtr == '\r' ) {
-                *myPtr = '\0';
-            }
-            if ( *myPtr == '\0' ) {
-                return savePtr;
-            }
-        }
     }
 
 } // extern "C"

@@ -3091,30 +3091,6 @@ parseXmlTag( const void *inPtr, const char* name, int flag, int &skipLen ) {
     return myLen;
 }
 
-int
-alignPackedOutput64( packedOutput_t &packedOutput ) {
-    void *outPtr, *alignedOutPtr;
-
-    if ( packedOutput.bBuf.buf == NULL || packedOutput.bBuf.len == 0 ) {
-        return 0;
-    }
-
-    outPtr = static_cast<char*>(packedOutput.bBuf.buf) + packedOutput.bBuf.len;
-
-    alignedOutPtr = alignDouble( outPtr );
-
-    if ( alignedOutPtr == outPtr ) {
-        return 0;
-    }
-
-    if ( packedOutput.bBuf.len + 8 > packedOutput.bufSize ) {
-        extendPackedOutput( packedOutput, 8, outPtr );
-    }
-    packedOutput.bBuf.len = packedOutput.bBuf.len + 8 - static_cast<int>(static_cast<char*>(alignedOutPtr) - static_cast<char*>(outPtr));
-
-    return 0;
-}
-
 /* packNopackPointer - copy the char pointer in *inPtr into
  * packedOutput->nopackBufArray without packing. Pack the buffer index
  * into packedOutput as an integer.

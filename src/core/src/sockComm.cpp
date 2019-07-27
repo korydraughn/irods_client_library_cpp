@@ -1465,13 +1465,6 @@ int cliSwitchConnect( rcComm_t *conn ) {
 }
 
 int
-addUdpPortToPortList( portList_t *thisPortList, int udpport ) {
-    /* put udpport in the upper 16 bits of portNum */
-    thisPortList->portNum |= udpport << 16;
-    return 0;
-}
-
-int
 getUdpPortFromPortList( portList_t *thisPortList ) {
     int udpport = 0;
     udpport = ( thisPortList->portNum & 0xffff0000 ) >> 16;
@@ -1481,13 +1474,6 @@ getUdpPortFromPortList( portList_t *thisPortList ) {
 int
 getTcpPortFromPortList( portList_t *thisPortList ) {
     return thisPortList->portNum & 0xffff;
-}
-
-int
-addUdpSockToPortList( portList_t *thisPortList, int udpsock ) {
-    /* put udpport in the upper 16 bits of portNum */
-    thisPortList->sock |= udpsock << 16;
-    return 0;
 }
 
 int

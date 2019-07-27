@@ -68,10 +68,6 @@ namespace irods {
         config_props_.remove( _key );
     }
 
-    void delete_server_property( const std::string& _prop ) {
-        irods::server_properties::instance().remove(_prop);
-    } // delete_server_property
-
 } // namespace irods
 
 

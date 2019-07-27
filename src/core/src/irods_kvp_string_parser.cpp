@@ -166,22 +166,6 @@ namespace irods {
         return SUCCESS();
     }
 
-    std::string kvp_string(
-        const kvp_map_t& _kvp ) {
-        std::stringstream str;
-        bool first = true;
-        for ( kvp_map_t::const_iterator it = _kvp.begin(); it != _kvp.end(); ++it ) {
-            if ( first ) {
-                first = false;
-            }
-            else {
-                str << kvp_delimiter();
-            }
-            str << it->first << kvp_association() << it->second;
-        }
-        return str.str();
-    }
-
     std::string escape_string( const std::string& _string,
                                const std::string& _escape_token,
                                const std::set<std::string>& _special_tokens ) {
@@ -208,27 +192,5 @@ namespace irods {
             ++i;
         }
         return escaped_str.str();
-    }
-
-
-    std::string escaped_kvp_string(
-        const kvp_map_t& _kvp ) {
-        std::stringstream str;
-        std::set<std::string> special_tokens;
-        special_tokens.insert( kvp_delimiter() );
-        special_tokens.insert( kvp_association() );
-        bool first = true;
-        for ( kvp_map_t::const_iterator it = _kvp.begin(); it != _kvp.end(); ++it ) {
-            if ( first ) {
-                first = false;
-            }
-            else {
-                str << kvp_delimiter();
-            }
-            str << escape_string( it->first, kvp_escape(), special_tokens );
-            str << kvp_association();
-            str << escape_string( it->second, kvp_escape(), special_tokens );
-        }
-        return str.str();
     }
 } // namespace irods

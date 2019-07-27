@@ -310,37 +310,11 @@ namespace irods {
         return deserialize_list( list, ";", '\\' );
     }
 
-    std::vector<std::string> deserialize_metadata( const std::string& metadata ) {
-        std::vector<std::string> deserialized_metadata = deserialize_list( metadata );
-        if ( deserialized_metadata.size() % 3 == 2 ) {
-            deserialized_metadata.push_back( "" );
-        }
-        else if ( deserialized_metadata.size() % 3 != 0 ) {
-            THROW( SYS_BAD_INPUT, "Metadata strings must consist of triplets of semicolon-separated tokens" );
-        }
-
-        return deserialized_metadata;
-    }
-
     std::string serialize_metadata( const std::vector<std::string>& metadata ) {
         if ( metadata.size() % 3 != 0 ) {
             THROW( SYS_BAD_INPUT, "Metadata must exist in triplets" );
         }
         return serialize_list( metadata );
-    }
-
-    std::vector<std::vector<std::string> > deserialize_acl( const std::string& acl ) {
-        std::vector<std::string> shallow_deserialized_acl = deserialize_list( acl, "; ", '\\' );
-        std::vector<std::vector<std::string> > deserialized_acl;
-        for ( std::vector<std::string>::const_iterator iter = shallow_deserialized_acl.begin(); iter != shallow_deserialized_acl.end(); ++iter ) {
-            std::vector<std::string> current_acl = deserialize_list( *iter, " ", '\\' );
-            if ( current_acl.size() != 2 ) {
-                THROW( SYS_BAD_INPUT, "ACLs must be a space-separated tuple of \"user permission\"" );
-            }
-            deserialized_acl.push_back( current_acl );
-        }
-
-        return deserialized_acl;
     }
 
     std::string serialize_acl( const std::vector<std::vector<std::string> >& acl ) {

@@ -20,17 +20,6 @@ addMsParam( msParamArray_t *msParamArray, const char *label,
                                     inOutStruct, inpOutBuf, 0 );
 }
 
-int
-addIntParamToArray( msParamArray_t *msParamArray, char *label, int inpInt ) {
-    int *myInt;
-    int status;
-
-    myInt = ( int * )malloc( sizeof( int ) );
-    *myInt = inpInt;
-    status = addMsParamToArray( msParamArray, label, INT_MS_T, myInt, NULL, 0 );
-    return status;
-}
-
 /* addMsParamToArray - Add a msParam_t to the msParamArray.
  * Input char *label - an element of the msParam_t. This input must be
  *            non null.
@@ -239,60 +228,12 @@ fillMsParam( msParam_t *msParam, const char *label,
 }
 
 void
-fillIntInMsParam( msParam_t *msParam, const int val ) {
-    if ( msParam != NULL ) {
-        msParam->inOutStruct = malloc( sizeof( int ) );
-        *(int*)(msParam->inOutStruct) = val;
-        msParam->type = strdup( INT_MS_T );
-    }
-}
-
-void
-fillFloatInMsParam( msParam_t *msParam, const float val ) {
-    if ( msParam != NULL ) {
-        msParam->inOutStruct = malloc( sizeof( float ) );
-        *(float*)(msParam->inOutStruct) = val;
-        msParam->type = strdup( FLOAT_MS_T );
-    }
-}
-
-void
-fillDoubleInMsParam( msParam_t *msParam, const rodsLong_t val ) {
-    if ( msParam != NULL ) {
-        msParam->inOutStruct = malloc( sizeof( rodsLong_t ) );
-        *(rodsLong_t*)(msParam->inOutStruct) = val;
-        msParam->type = strdup( DOUBLE_MS_T );
-    }
-}
-
-void
-fillCharInMsParam( msParam_t *msParam, const char val ) {
-    if ( msParam != NULL ) {
-        msParam->inOutStruct = malloc( sizeof( float ) );
-        *(float*)(msParam->inOutStruct) = val;
-        msParam->type = strdup( FLOAT_MS_T );
-    }
-}
-
-void
 fillStrInMsParam( msParam_t *msParam, const char *str ) {
     if ( msParam != NULL ) {
         msParam->inOutStruct = str ? strdup( str ) : NULL;
         msParam->type = strdup( STR_MS_T );
     }
 }
-
-
-void
-fillBufLenInMsParam( msParam_t *msParam, int len, bytesBuf_t *bytesBuf ) {
-    if ( msParam != NULL ) {
-        msParam->inOutStruct = malloc( sizeof( int ) );
-        *(int*)(msParam->inOutStruct) = len;
-        msParam->inpOutBuf = bytesBuf;
-        msParam->type = strdup( BUF_LEN_MS_T );
-    }
-}
-
 
 int
 printMsParam( msParamArray_t *outParamArray ) {
@@ -1383,68 +1324,6 @@ chkCollInpKw( char * keyWd, int validKwFlags ) {
         }
     }
     return USER_BAD_KEYWORD_ERR;
-}
-
-int
-addKeyValToMspStr( msParam_t * keyStr, msParam_t * valStr,
-                   msParam_t * msKeyValStr ) {
-
-    if ( ( keyStr == NULL && valStr == NULL ) || msKeyValStr == NULL ) {
-        return SYS_INTERNAL_NULL_INPUT_ERR;
-    }
-
-    if ( msKeyValStr->type == NULL ) {
-        fillStrInMsParam( msKeyValStr, NULL );
-    }
-
-    char *keyPtr = parseMspForStr( keyStr );
-    int keyLen;
-    if ( keyPtr == NULL || strcmp( keyPtr, MS_NULL_STR ) == 0 ) {
-        keyLen = 0;
-    }
-    else {
-        keyLen = strlen( keyPtr );
-    }
-
-    char *valPtr = parseMspForStr( valStr );
-    int valLen;
-    if ( valPtr == NULL || strcmp( valPtr, MS_NULL_STR ) == 0 ) {
-        valLen = 0;
-    }
-    else {
-        valLen = strlen( valPtr );
-    }
-    if ( valLen + keyLen <= 0 ) {
-        return 0;
-    }
-
-    char *oldKeyValPtr = parseMspForStr( msKeyValStr );
-    char *newKeyValPtr, *tmpPtr;
-    if ( oldKeyValPtr == NULL ) {
-        int newLen = valLen + keyLen + 10;
-        newKeyValPtr = ( char * )malloc( newLen );
-        *newKeyValPtr = '\0';
-        tmpPtr = newKeyValPtr;
-    }
-    else {
-        int oldLen = strlen( oldKeyValPtr );
-        int newLen = oldLen + valLen + keyLen + 10;
-        newKeyValPtr = ( char * )malloc( newLen );
-        snprintf( newKeyValPtr, newLen, "%s%s", oldKeyValPtr, MS_INP_SEP_STR );
-        tmpPtr = newKeyValPtr + oldLen + 4;
-        free( oldKeyValPtr );
-    }
-
-    if ( keyLen > 0 ) {
-        snprintf( tmpPtr, keyLen + 2, "%s=", keyPtr );
-        tmpPtr += keyLen + 1;
-    }
-    if ( valLen > 0 ) {
-        snprintf( tmpPtr, valLen + 2, "%s", valPtr );
-    }
-    msKeyValStr->inOutStruct = ( void * ) newKeyValPtr;
-
-    return 0;
 }
 
 int

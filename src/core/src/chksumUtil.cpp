@@ -12,62 +12,6 @@
 
 static int ChksumCnt = 0;
 static int FailedChksumCnt = 0;
-int
-chksumUtil( rcComm_t *conn, rodsEnv *myRodsEnv, rodsArguments_t *myRodsArgs,
-            rodsPathInp_t *rodsPathInp ) {
-    if ( rodsPathInp == NULL ) {
-        return USER__NULL_INPUT_ERR;
-    }
-
-    collInp_t collInp;
-    dataObjInp_t dataObjInp;
-    int savedStatus = initCondForChksum( myRodsArgs, &dataObjInp, &collInp );
-
-    if ( savedStatus < 0 ) {
-        return savedStatus;
-    }
-
-    for ( int i = 0; i < rodsPathInp->numSrc; i++ ) {
-        if ( rodsPathInp->srcPath[i].objType == UNKNOWN_OBJ_T ) {
-            getRodsObjType( conn, &rodsPathInp->srcPath[i] );
-            if ( rodsPathInp->srcPath[i].objState == NOT_EXIST_ST ) {
-                rodsLog( LOG_ERROR, "chksumUtil: srcPath %s does not exist", rodsPathInp->srcPath[i].outPath );
-                savedStatus = USER_INPUT_PATH_ERR;
-                continue;
-            }
-        }
-
-        int status = 0;
-        if ( rodsPathInp->srcPath[i].objType == DATA_OBJ_T ) {
-            rmKeyVal( &dataObjInp.condInput, TRANSLATED_PATH_KW );
-            status = chksumDataObjUtil( conn, rodsPathInp->srcPath[i].outPath, myRodsArgs, &dataObjInp );
-        }
-
-        else if ( rodsPathInp->srcPath[i].objType ==  COLL_OBJ_T ) {
-            addKeyVal( &dataObjInp.condInput, TRANSLATED_PATH_KW, "" );
-            status = chksumCollUtil( conn, rodsPathInp->srcPath[i].outPath, myRodsEnv, myRodsArgs, &dataObjInp, &collInp );
-        }
-
-        else {
-            /* should not be here */
-            rodsLog( LOG_ERROR, "chksumUtil: invalid chksum objType %d for %s",
-                     rodsPathInp->srcPath[i].objType, rodsPathInp->srcPath[i].outPath );
-            return USER_INPUT_PATH_ERR;
-        }
-        /* XXXX may need to return a global status */
-        if ( status < 0 &&
-                status != CAT_NO_ROWS_FOUND ) {
-            rodsLogError( LOG_ERROR, status, "chksumUtil: chksum error for %s, status = %d",
-                          rodsPathInp->srcPath[i].outPath, status );
-            savedStatus = status;
-        }
-    }
-
-    printf( "Total checksum performed = %d, Failed checksum = %d\n",
-            ChksumCnt, FailedChksumCnt );
-
-    return savedStatus;
-}
 
 int
 chksumDataObjUtil( rcComm_t *conn, char *srcPath,

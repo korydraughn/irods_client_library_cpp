@@ -2278,21 +2278,6 @@ readPathnamePatterns( char *buf, int buflen ) {
     return pp;
 }
 
-void
-freePathnamePatterns( pathnamePatterns_t *pp ) {
-    if ( pp == NULL ) {
-        return;
-    }
-
-    if ( pp->patterns ) {
-        free( pp->patterns );
-    }
-    if ( pp->pattern_buf ) {
-        free( pp->pattern_buf );
-    }
-    free( pp );
-}
-
 int
 matchPathname( pathnamePatterns_t *pp, char *name, char *dirname ) {
     int index;

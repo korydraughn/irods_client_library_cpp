@@ -178,74 +178,7 @@ const void* updateInHashTable( Hashtable *h, const char* key, const void* value 
     }
     return NULL;
 }
-/**
- * delete from hash table
- */
-const void *deleteFromHashTable( Hashtable *h, const char* key ) {
-    unsigned long hs = myhash( key );
-    unsigned long index = hs % h->size;
-    const void *temp = NULL;
-    if ( h->buckets[index] != NULL ) {
-        struct bucket *b0 = h->buckets[index];
-        if ( strcmp( b0->key, key ) == 0 ) {
-            h->buckets[index] = b0->next;
-            temp = b0->value;
-            if ( !h->dynamic ) {
-                free( b0->key );
-                free( b0 );
-            }
-            h->len --;
-        }
-        else {
-            while ( b0->next != NULL ) {
-                if ( strcmp( b0->next->key, key ) == 0 ) {
-                    struct bucket *tempBucket = b0->next;
-                    temp = b0->next->value;
-                    b0->next = b0->next->next;
-                    if ( !h->dynamic ) {
-                        free( tempBucket->key );
-                        free( tempBucket );
-                    }
-                    h->len --;
-                    break;
-                }
-                b0 = b0->next; // JMC - backport 4799
-            }
-        }
-    }
 
-    return temp;
-}
-/**
- * returns NULL if not found
- */
-const void* lookupFromHashTable( Hashtable *h, const char* key ) {
-    unsigned long hs = myhash( key );
-    unsigned long index = hs % h->size;
-    struct bucket *b0 = h->buckets[index];
-    while ( b0 != NULL ) {
-        if ( strcmp( b0->key, key ) == 0 ) {
-            return b0->value;
-        }
-        b0 = b0->next;
-    }
-    return NULL;
-}
-/**
- * returns NULL if not found
- */
-struct bucket* lookupBucketFromHashTable( Hashtable *h, const char* key ) {
-    unsigned long hs = myhash( key );
-    unsigned long index = hs % h->size;
-    struct bucket *b0 = h->buckets[index];
-    while ( b0 != NULL ) {
-        if ( strcmp( b0->key, key ) == 0 ) {
-            return b0;
-        }
-        b0 = b0->next;
-    }
-    return NULL;
-}
 struct bucket* nextBucket( struct bucket *b0, const char* key ) {
     b0 = b0->next;
     while ( b0 != NULL ) {
@@ -257,19 +190,6 @@ struct bucket* nextBucket( struct bucket *b0, const char* key ) {
     return NULL;
 }
 
-void deleteHashTable( Hashtable *h, void ( *f )( const void * ) ) {
-    if ( !h->dynamic ) {
-        int i;
-        for ( i = 0; i < h->size; i++ ) {
-            struct bucket *b0 = h->buckets[i];
-            if ( b0 != NULL ) {
-                deleteBucket( b0, f );
-            }
-        }
-        free( h->buckets );
-        free( h );
-    }
-}
 void deleteBucket( struct bucket *b0, void ( *f )( const void * ) ) {
     if ( b0->next != NULL ) {
         deleteBucket( b0->next, f );
@@ -281,24 +201,10 @@ void deleteBucket( struct bucket *b0, void ( *f )( const void * ) ) {
     }
     free( b0 );
 }
+
 void nop( const void* ) {
 }
 
-void free_const( const void *a ) {
-    free( const_cast< void * >( a ) );
-}
-
-
-
-unsigned long B_hash( unsigned char* string ) { /* Bernstein hash */
-    unsigned long hash = HASH_BASE;
-    while ( *string != '\0' ) {
-        hash = ( ( hash << 5 ) + hash ) + ( int ) * string;
-        string++;
-    }
-    return hash;
-
-}
 unsigned long sdbm_hash( char* str ) { /* sdbm */
     unsigned long hash = 0;
     while ( *str != '\0' ) {

@@ -20,54 +20,6 @@
 using namespace boost::filesystem;
 
 int
-fsckObj( rcComm_t *conn,
-         rodsArguments_t *myRodsArgs,
-         rodsPathInp_t *rodsPathInp,
-         SetGenQueryInpFromPhysicalPath strategy, const char* argument_for_SetGenQueryInpFromPhysicalPath) {
-
-    if ( rodsPathInp->numSrc != 1 ) {
-        rodsLog( LOG_ERROR, "fsckObj: gave %i input source path, "
-                 "should give one and only one", rodsPathInp->numSrc );
-        return USER_INPUT_PATH_ERR;
-    }
-
-    char * inpPathO = rodsPathInp->srcPath[0].outPath;
-    path p( inpPathO );
-    if ( !exists( p ) ) {
-        rodsLog( LOG_ERROR, "fsckObj: %s does not exist", inpPathO );
-        return USER_INPUT_PATH_ERR;
-    }
-
-    if ( is_symlink( p ) ) {
-        return 0;
-    }
-
-    int lenInpPath = strlen( inpPathO );
-    if ( lenInpPath > 0 && '/' == inpPathO[ lenInpPath - 1 ] ) {
-        lenInpPath--;
-    }
-    if ( lenInpPath >= MAX_PATH_ALLOWED ) {
-        rodsLog( LOG_ERROR, "Path %s is longer than %ju characters in fsckObj",
-                 inpPathO, ( intmax_t ) MAX_PATH_ALLOWED );
-        return USER_STRLEN_TOOLONG;
-    }
-
-    char inpPath[ MAX_PATH_ALLOWED ];
-    strncpy( inpPath, inpPathO, lenInpPath );
-    inpPath[ lenInpPath ] = '\0';
-    // if it is part of a mounted collection, abort
-    if ( is_directory( p ) ) {
-        if ( int status = checkIsMount( conn, inpPath ) ) {
-            rodsLog( LOG_ERROR, "The directory %s or one of its "
-                     "subdirectories to be checked is declared as being "
-                     "used for a mounted collection: abort!", inpPath );
-            return status;
-        }
-    }
-    return fsckObjDir( conn, myRodsArgs, inpPath, strategy, argument_for_SetGenQueryInpFromPhysicalPath );
-}
-
-int
 fsckObjDir( rcComm_t *conn, rodsArguments_t *myRodsArgs, char *inpPath, SetGenQueryInpFromPhysicalPath strategy, const char* argument_for_SetGenQueryInpFromPhysicalPath) {
     int status = 0;
     char fullPath[MAX_PATH_ALLOWED] = "\0";
