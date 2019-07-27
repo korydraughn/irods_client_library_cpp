@@ -1,0 +1,7 @@
+x [src/core/src/irods_threads.cpp:57]: (style) The function 'thread_alloc' is never used.
+x [src/core/src/irods_threads.cpp:81]: (style) The function 'thread_free' is never used.
+x [src/core/src/irods_threads.cpp:100]: (style) The function 'thread_interrupt' is never used.
+x [src/core/src/irods_threads.cpp:30]: (style) The function 'thread_lock' is never used.
+x [src/core/src/irods_threads.cpp:18]: (style) The function 'thread_notify' is never used.
+x [src/core/src/irods_threads.cpp:44]: (style) The function 'thread_unlock' is never used.
+x [src/core/src/irods_threads.cpp:6]: (style) The function 'thread_wait' is never used.

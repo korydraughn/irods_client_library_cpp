@@ -1,0 +1,12 @@
+[src/core/src/miscUtil.cpp:1759]: (style) The function 'freeCollEnt' is never used.
+x [src/core/src/miscUtil.cpp:2183]: (style) The function 'getNumFilesInDir' is never used.
+x [src/core/src/miscUtil.cpp:2087]: (style) The function 'getOpenedCollLen' is never used.
+x [src/core/src/miscUtil.cpp:1835]: (style) The function 'getZoneHintForGenQuery' is never used.
+x [src/core/src/miscUtil.cpp:1495]: (style) The function 'get_resc_hier_from_leaf_id' is never used.
+x [src/core/src/miscUtil.cpp:2032]: (style) The function 'iCommandProgStat' is never used.
+x [src/core/src/miscUtil.cpp:2297]: (style) The function 'matchPathname' is never used.
+x [src/core/src/miscUtil.cpp:157]: (style) The function 'mkdirForFilePath' is never used.
+x [src/core/src/miscUtil.cpp:460]: (style) The function 'printTime' is never used.
+x [src/core/src/miscUtil.cpp:2220]: (style) The function 'readPathnamePatterns' is never used.
+x [src/core/src/miscUtil.cpp:2149]: (style) The function 'rmFilesInDir' is never used.
+x [src/core/src/miscUtil.cpp:174]: (style) The function 'rmdirR' is never used.

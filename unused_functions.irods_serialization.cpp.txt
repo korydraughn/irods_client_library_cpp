@@ -1,0 +1,3 @@
+x [src/core/src/irods_serialization.cpp:380]: (style) The function 'serialize_acl_c' is never used.
+x [src/core/src/irods_serialization.cpp:359]: (style) The function 'serialize_list_c' is never used.
+x [src/core/src/irods_serialization.cpp:367]: (style) The function 'serialize_metadata_c' is never used.

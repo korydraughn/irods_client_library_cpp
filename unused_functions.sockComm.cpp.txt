@@ -1,0 +1,10 @@
+x [src/core/src/sockComm.cpp:1501]: (style) The function 'getTcpSockFromPortList' is never used.
+x [src/core/src/sockComm.cpp:1494]: (style) The function 'getUdpSockFromPortList' is never used.
+x [src/core/src/sockComm.cpp:1506]: (style) The function 'isReadMsgError' is never used.
+x [src/core/src/sockComm.cpp:407]: (style) The function 'rsAcceptConn' is never used.
+x [src/core/src/sockComm.cpp:1168]: (style) The function 'sendVersion' is never used.
+x [src/core/src/sockComm.cpp:113]: (style) The function 'sockAgentStart' is never used.
+x [src/core/src/sockComm.cpp:144]: (style) The function 'sockAgentStop' is never used.
+x [src/core/src/sockComm.cpp:289]: (style) The function 'sockOpenForInConn' is never used.
+x [src/core/src/sockComm.cpp:1408]: (style) The function 'svrSwitchConnect' is never used.
+x [src/core/src/sockComm.cpp:435]: (style) The function 'writeMsgHeader' is never used.

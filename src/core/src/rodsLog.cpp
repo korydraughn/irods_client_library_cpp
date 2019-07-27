@@ -270,117 +270,6 @@ rodsLog( int level, const char *formatStr, ... ) {
     free( message );
 }
 
-/* same as rodsLog plus putting the msg in myError too. Need to merge with
- * rodsLog
- */
-
-void
-rodsLogAndErrorMsg( int level, rError_t *myError, int status,
-                    const char *formatStr, ... ) {
-    char *prefix;
-    time_t timeValue;
-    FILE *errOrOut;
-    va_list ap;
-    char errMsg[ERR_MSG_LEN];
-
-    char extraInfo[100];
-#ifdef windows_platform
-    char nt_log_msg[2048];
-#endif
-
-    if ( level > verbosityLevel ) {
-        return;
-    }
-
-
-    va_start( ap, formatStr );
-    char * message = ( char * )malloc( sizeof( char ) * BIG_STRING_LEN );
-    int len = vsnprintf( message, BIG_STRING_LEN, formatStr, ap );
-    if ( len + 1 > BIG_STRING_LEN ) {
-        va_end( ap );
-        va_start( ap, formatStr );
-        free( message );
-        message = ( char * )malloc( sizeof( char ) * ( len + 1 ) );
-        vsnprintf( message, len + 1, formatStr, ap );
-    }
-    va_end( ap );
-
-    extraInfo[0] = '\0';
-    errOrOut = stdout;
-    if ( ProcessType == SERVER_PT || ProcessType == AGENT_PT ||
-            ProcessType == RE_SERVER_PT ) {
-        char timeBuf[100];
-        time( &timeValue );
-        rstrcpy( timeBuf, ctime( &timeValue ), 90 );
-        timeBuf[19] = '\0';
-        myPid = getpid();
-        snprintf( extraInfo, 100 - 1, "%s pid:%d ", timeBuf + 4, myPid );
-    }
-    else {
-        if ( level <= LOG_ERROR || level == LOG_SQL ) {
-            errOrOut = stderr;
-        }
-    }
-
-    prefix = "";
-    if ( level == LOG_SQL ) {
-        prefix = "LOG_SQL";
-    }
-    if ( level == LOG_SYS_FATAL ) {
-        prefix = "SYSTEM FATAL";
-    }
-    if ( level == LOG_SYS_WARNING ) {
-        prefix = "SYSTEM WARNING";
-    }
-    if ( level == LOG_ERROR ) {
-        prefix = "ERROR";
-    }
-    if ( level == LOG_NOTICE ) {
-        prefix = "NOTICE";
-    }
-    if ( level == LOG_WARNING ) {
-        prefix = "WARNING";
-    }
-    if ( level <= LOG_DEBUG ) {
-        prefix = "DEBUG";
-    }
-    const size_t message_len = strlen( message );
-    if ( message_len > 0 && message[message_len - 1] == '\n' ) {
-#ifndef windows_platform
-        fprintf( errOrOut, "%s%s: %s", extraInfo, prefix, message );
-        if ( myError != NULL ) {
-            snprintf( errMsg, ERR_MSG_LEN,
-                      "%s: %s", prefix, message );
-            addRErrorMsg( myError, status, errMsg );
-        }
-#else
-        sprintf( nt_log_msg, "%s%s: %s", extraInfo, prefix, message );
-        rodsNtElog( nt_log_msg );
-#endif
-    }
-    else {
-#ifndef windows_platform
-        fprintf( errOrOut, "%s%s: %s\n", extraInfo, prefix, message );
-        if ( myError != NULL ) {
-            snprintf( errMsg, ERR_MSG_LEN,
-                      "%s: %s\n", prefix, message );
-            addRErrorMsg( myError, status, errMsg );
-        }
-#else
-        sprintf( nt_log_msg, "%s%s: %s\n", extraInfo, prefix, message );
-        rodsNtElog( nt_log_msg );
-#endif
-    }
-
-#ifndef windows_platform
-    fflush( errOrOut );
-#endif
-
-    forward_to_syslog(level, message);
-
-    free( message );
-}
-
 /*
  Change the verbosityLevel of reporting.
  The input value is the new minimum level of message to report.
@@ -393,27 +282,6 @@ rodsLogLevel( int level ) {
 int
 getRodsLogLevel() {
     return ( verbosityLevel );
-}
-
-/*
- Request sql logging.
- */
-void
-rodsLogSqlReq( int onOrOff ) {
-    sqlVerbosityLevel = onOrOff;
-}
-
-void
-rodsLogSql( const char *sql ) {
-    myPid = getpid();
-    if ( sqlVerbosityLevel ) rodsLog( LOG_SQL, "pid: %d sql: %s",
-                                          myPid, sql );
-}
-void
-rodsLogSqlResult( const char *stat ) {
-    myPid = getpid();
-    if ( sqlVerbosityLevel ) rodsLog( LOG_SQL, "pid: %d result: %s",
-                                          myPid, stat );
 }
 
 /*
@@ -435,32 +303,6 @@ rodsErrorName( int errorValue, char **subName ) {
         return ( "Unknown iRODS error" );
     }
     return search->second.c_str();
-}
-
-/*
- Convert an error code to a string and log it.
- This was originally called rodsLogError, but was renamed when we
- created the new rodsLogError below.  This is no longer used (
- rodsLogError can be called with the same arguments).
- */
-void
-rodsLogErrorOld( int level, int rodsErrorCode, const char *textStr ) {
-    char *errSubName = NULL;
-
-    if ( level < verbosityLevel ) {
-        return;
-    }
-
-    const char * errName = rodsErrorName( rodsErrorCode, &errSubName );
-    if ( textStr && strlen( textStr ) > 0 ) {
-        rodsLog( level, "%s Error: %d: %s, %s", textStr, rodsErrorCode,
-                 errName, errSubName );
-    }
-    else {
-        rodsLog( level, "Error: %d: %s, %s", rodsErrorCode,
-                 errName, errSubName );
-    }
-    free( errSubName );
 }
 
 /* Like rodsLogError but with full rodsLog functionality too.
