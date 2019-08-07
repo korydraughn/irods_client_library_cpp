@@ -1,5 +1,0 @@
-x [src/core/src/sslSockComm.cpp:142]: (style) The function 'sslAccept' is never used.
-x [src/core/src/sslSockComm.cpp:296]: (style) The function 'sslReadMsgBody' is never used.
-x [src/core/src/sslSockComm.cpp:226]: (style) The function 'sslReadMsgHeader' is never used.
-x [src/core/src/sslSockComm.cpp:444]: (style) The function 'sslSendRodsMsg' is never used.
-x [src/core/src/sslSockComm.cpp:194]: (style) The function 'sslShutdown' is never used.

@@ -1,5 +1,0 @@
-x [src/core/src/rodsLog.cpp:278]: (style) The function 'rodsLogAndErrorMsg' is never used.
-x [src/core/src/rodsLog.cpp:447]: (style) The function 'rodsLogErrorOld' is never used.
-x [src/core/src/rodsLog.cpp:407]: (style) The function 'rodsLogSql' is never used.
-x [src/core/src/rodsLog.cpp:402]: (style) The function 'rodsLogSqlReq' is never used.
-x [src/core/src/rodsLog.cpp:413]: (style) The function 'rodsLogSqlResult' is never used.

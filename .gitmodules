@@ -1,0 +1,3 @@
+[submodule "irods_client_library_c"]
+	path = irods_client_library_c
+	url = https://github.com/korydraughn/irods_client_library_c
